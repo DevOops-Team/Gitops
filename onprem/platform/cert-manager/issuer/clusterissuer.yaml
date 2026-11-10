@@ -4,7 +4,7 @@ metadata:
   name: letsencrypt-cloudflare-production
 spec:
   acme:
-    email: replace-me@example.com
+    email: qkrrlgus010104@gmail.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-cloudflare-production-account
