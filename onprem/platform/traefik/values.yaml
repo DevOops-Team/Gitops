@@ -19,7 +19,7 @@ providers:
     enabled: false
 # ADR-22 · GPU-115: MetalLB L2 VIP. pfSense는 WAN:443 → 172.30.0.125:443으로 넘긴다.
 # Local: 사용자 IP를 Traefik까지 보존하고, Traefik Pod가 있는 worker만 VIP를 알린다.
-# NodePort 30443은 전환 기간(Tailscale 확인용)으로 유지.
+# NodePort는 만들지 않는다(allocateLoadBalancerNodePorts: false) — 진입점은 VIP 하나. Tailscale에서도 VIP:443으로 접속
 service:
   annotations:
     metallb.universe.tf/address-pool: platform-vip
@@ -27,6 +27,7 @@ service:
   spec:
     type: LoadBalancer
     externalTrafficPolicy: Local
+    allocateLoadBalancerNodePorts: false
 ports:
   web:
     expose:
@@ -34,7 +35,6 @@ ports:
   websecure:
     expose:
       default: true
-    nodePort: 30443
 nodeSelector:
   platform-worker: 'true'
 tolerations: []
