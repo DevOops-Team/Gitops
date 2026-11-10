@@ -1,0 +1,29 @@
+# eks-b 워커: Kueue · JobSet · 워커 큐 · relocator RBAC
+# project gpu-eks-b와 클러스터 등록(eks-b)은 bootstrap 담당 작업에서 (root.yaml · project.yaml)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-scheduling-eks-b
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  project: gpu-eks-b
+  destination:
+    name: eks-b
+    namespace: kueue-system
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    path: eks/scheduling/overlays/eks-b

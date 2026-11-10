@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 매니저 클러스터 JobSet v0.13.0 (jobset-system). 업스트림 매니페스트 + 3중화 패치
+# 원본: K8s 레포 scheduling/jobset/base + scheduling/jobset/manager
+resources:
+- jobset-v0.13.0-manifests.yaml
+- pdb.yaml
+patches:
+  # CPU requests 500m -> 250m (Kueue와 같은 이유). limits(memory 4Gi)와 memory requests는 기본값 유지
+  - target:
+      kind: Deployment
+      name: jobset-controller-manager
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: jobset-controller-manager
+      spec:
+        template:
+          spec:
+            containers:
+              - name: manager
+                resources:
+                  requests:
+                    cpu: 250m
+  # JobSet 웹훅도 failurePolicy Fail -> Pod 하나면 재시작 동안 JobSet 생성이 거부됨
+  - target:
+      kind: Deployment
+      name: jobset-controller-manager
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: jobset-controller-manager
+      spec:
+        replicas: 3
+        strategy:
+          type: RollingUpdate
+          rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+        template:
+          spec:
+            nodeSelector: {platform-worker: 'true'}
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector: {matchLabels: {app.kubernetes.io/name: jobset}}
+                  topologyKey: kubernetes.io/hostname

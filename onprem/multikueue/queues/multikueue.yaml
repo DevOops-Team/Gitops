@@ -1,0 +1,54 @@
+# MultiKueue 워커 = EKS 3개. kubeconfig Secret은 kueue-system/eks-{a,b,c}-kubeconfig (키 kubeconfig)
+# Secret은 커밋하지 않음: IaC playbooks/onprem/register-worker-credential.yml이 EKS마다 등록
+# (K8s 레포 kind 개발용은 worker1~3 / worker{N}-secret)
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: AdmissionCheck
+metadata:
+  name: multikueue-ac
+spec:
+  controllerName: kueue.x-k8s.io/multikueue
+  parameters:
+    apiGroup: kueue.x-k8s.io
+    kind: MultiKueueConfig
+    name: multikueue-config
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: MultiKueueConfig
+metadata:
+  name: multikueue-config
+spec:
+  clusters:
+  - eks-a
+  - eks-b
+  - eks-c
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: MultiKueueCluster
+metadata:
+  name: eks-a
+spec:
+  clusterSource:
+    kubeConfig:
+      location: eks-a-kubeconfig
+      locationType: Secret
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: MultiKueueCluster
+metadata:
+  name: eks-b
+spec:
+  clusterSource:
+    kubeConfig:
+      location: eks-b-kubeconfig
+      locationType: Secret
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: MultiKueueCluster
+metadata:
+  name: eks-c
+spec:
+  clusterSource:
+    kubeConfig:
+      location: eks-c-kubeconfig
+      locationType: Secret

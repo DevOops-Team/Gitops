@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 스케줄링 컨트롤러: dispatcher(빈 패킹 지명) · relocator(재배치 실행) + RelocationRequest CRD + 입장 정책
+# 이미지: K8s 레포 .github/workflows/scheduling-controllers-image.yml이 GHCR에 올린 것 (실행 Summary의 digest)
+resources:
+- crd-relocationrequest.yaml
+- controllers.yaml
+- admission-policy.yaml
+images:
+- name: ghcr.io/devoops-team/scheduling-controllers
+  digest: sha256:f941d56f4755671efcd89f5ff6f95ac40cdf4bbdf234e396dc813384b34c7a76   # K8s 7eb0164
+replicas:
+# relocator는 S3·DynamoDB 자격 증명(온프레 인증 경로, 박기현) 준비 전까지 0
+- name: relocator
+  count: 0

@@ -1,0 +1,9 @@
+# GPU 노드로만 가게 flavor에서 nodeSelector 주입 (Karpenter NodePool training·spare가 devoops/gpu=true 라벨)
+# 예비 노드 taint(devoops/spare) toleration은 복구 잡 Pod 템플릿에만 있음 (정본 I4) -> 여기서 넣지 않음
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  name: gpu
+spec:
+  nodeLabels:
+    devoops/gpu: "true"

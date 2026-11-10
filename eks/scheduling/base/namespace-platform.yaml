@@ -1,0 +1,7 @@
+# EKS의 platform 네임스페이스 (relocator SA). training은 queues.yaml에 있음
+# 모니터링 에이전트·Kafka 탐지기도 EKS platform에 들어오면 이 Namespace를 공통 foundation 앱으로 옮길 것
+# (FailOnSharedResource=true라 두 Application이 같은 Namespace를 가지면 sync 실패)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform

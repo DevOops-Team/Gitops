@@ -1,0 +1,57 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# EKS 워커 공통: Kueue v0.20.4(kueue-system) · JobSet v0.13.0(jobset-system) · 워커 큐 · relocator RBAC
+# 클러스터 이름은 넣지 않는다 (overlays/eks-{a,b,c})
+# 원본: K8s 레포 scheduling/kueue/worker, scheduling/jobset/base, scheduling/queues/worker/base, scheduling/controllers/deploy/worker
+resources:
+- kueue-v0.20.4-manifests.yaml
+- jobset-v0.13.0-manifests.yaml
+- queues.yaml
+- priorityclass.yaml
+- namespace-platform.yaml
+- relocator-rbac.yaml
+configMapGenerator:
+- name: kueue-manager-config
+  namespace: kueue-system
+  behavior: replace
+  files:
+  - controller_manager_config.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+patches:
+  - path: resourceflavor-gpu.yaml
+  # CPU requests 500m -> 250m (관리 worker 1대 장애 시 CPU 여유 확보, EKS 시스템 노드 공간 확보)
+  # limits(cpu 2, memory 512Mi)와 memory requests는 기본값 유지
+  - target:
+      kind: Deployment
+      name: kueue-controller-manager
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: kueue-controller-manager
+      spec:
+        template:
+          spec:
+            containers:
+              - name: manager
+                resources:
+                  requests:
+                    cpu: 250m
+  # CPU requests 500m -> 250m (Kueue와 같은 이유). limits(memory 4Gi)와 memory requests는 기본값 유지
+  - target:
+      kind: Deployment
+      name: jobset-controller-manager
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: jobset-controller-manager
+      spec:
+        template:
+          spec:
+            containers:
+              - name: manager
+                resources:
+                  requests:
+                    cpu: 250m

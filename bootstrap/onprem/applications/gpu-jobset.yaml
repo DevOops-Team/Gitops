@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-jobset
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  project: gpu-scheduling
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: jobset-system
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    - ServerSideApply=true          # Kueue·JobSet CRD가 커서 client-side apply 어노테이션 한도를 넘음
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    path: onprem/multikueue/jobset
