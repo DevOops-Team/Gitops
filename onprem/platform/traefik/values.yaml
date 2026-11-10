@@ -14,6 +14,10 @@ providers:
     enabled: true
     publishedService:
       enabled: false
+    # NodePort라 publishedService로는 Ingress 상태에 주소가 안 써져 Argo CD가 Ingress를 Progressing으로 본다.
+    # 실제 진입점(pfSense → Traefik:30443)의 도메인을 Ingress 상태에 기록한다.
+    ingressEndpoint:
+      hostname: devoops.site
   kubernetesCRD:
     enabled: false
 service:
