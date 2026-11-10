@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: frontend-tls
+  namespace: platform
+spec:
+  secretName: frontend-tls
+  dnsNames:
+  - devoops.site
+  issuerRef:
+    name: letsencrypt-cloudflare-production
+    kind: ClusterIssuer
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
