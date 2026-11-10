@@ -7,6 +7,7 @@ spec:
   description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend), later controllers and scheduling
   sourceRepos:
   - https://github.com/DevOops-Team/Gitops.git
+  - https://github.com/DevOops-Team/Monitoring.git   # 모니터링 수집 층 매니페스트 (Monitoring deploy/agents, 이태림)
   - https://traefik.github.io/charts
   - https://charts.jetstack.io
   destinations:
@@ -18,6 +19,8 @@ spec:
     namespace: ingress-system
   - server: https://kubernetes.default.svc
     namespace: cert-manager
+  - server: https://kubernetes.default.svc
+    namespace: monitoring
   clusterResourceWhitelist:
   - group: ''
     kind: Namespace
