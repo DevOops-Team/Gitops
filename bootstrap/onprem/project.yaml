@@ -10,6 +10,7 @@ spec:
   - https://github.com/DevOops-Team/Monitoring.git   # 모니터링 수집 층 매니페스트 (Monitoring deploy/agents, 이태림)
   - https://traefik.github.io/charts
   - https://charts.jetstack.io
+  - https://metallb.github.io/metallb
   destinations:
   - server: https://kubernetes.default.svc
     namespace: platform
@@ -21,6 +22,8 @@ spec:
     namespace: cert-manager
   - server: https://kubernetes.default.svc
     namespace: monitoring
+  - server: https://kubernetes.default.svc
+    namespace: metallb-system
   clusterResourceWhitelist:
   - group: ''
     kind: Namespace

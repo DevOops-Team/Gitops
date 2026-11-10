@@ -12,18 +12,21 @@ ingressClass:
 providers:
   kubernetesIngress:
     enabled: true
+    # LoadBalancer Service의 VIP(172.30.0.125)를 Ingress 상태에 그대로 기록한다 (ADR-22)
     publishedService:
-      enabled: false
-    # NodePort라 publishedService로는 Ingress 상태에 주소가 안 써져 Argo CD가 Ingress를 Progressing으로 본다.
-    # 실제 진입점(pfSense → Traefik:30443)의 도메인을 Ingress 상태에 기록한다.
-    ingressEndpoint:
-      hostname: devoops.site
+      enabled: true
   kubernetesCRD:
     enabled: false
+# ADR-22 · GPU-115: MetalLB L2 VIP. pfSense는 WAN:443 → 172.30.0.125:443으로 넘긴다.
+# Local: 사용자 IP를 Traefik까지 보존하고, Traefik Pod가 있는 worker만 VIP를 알린다.
+# NodePort 30443은 전환 기간(Tailscale 확인용)으로 유지.
 service:
+  annotations:
+    metallb.universe.tf/address-pool: platform-vip
+    metallb.universe.tf/loadBalancerIPs: 172.30.0.125
   spec:
-    type: NodePort
-    externalTrafficPolicy: Cluster
+    type: LoadBalancer
+    externalTrafficPolicy: Local
 ports:
   web:
     expose:
