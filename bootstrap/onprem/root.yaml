@@ -13,6 +13,10 @@ spec:
     server: https://kubernetes.default.svc
     namespace: argocd
   syncPolicy:
+    # app-of-apps: applications/ 변경을 자동 반영. 자식 Application에 finalizer가 없어 prune은 Application 객체만 지우고 워크로드는 남긴다
+    automated:
+      prune: true
+      selfHeal: true
     syncOptions:
     - CreateNamespace=false
     - FailOnSharedResource=true
