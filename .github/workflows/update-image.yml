@@ -1,0 +1,120 @@
+# 재사용 워크플로: 코드 레포 main CI가 GHCR에 올린 이미지 digest를 Gitops overlay에 반영한다 (GPU-114 · ADR-23).
+#
+# 호출 예 (Frontend · Backend · K8s 등 이미지를 만드는 레포의 CI):
+#   deploy:
+#     needs: image
+#     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#     uses: DevOops-Team/Gitops/.github/workflows/update-image.yml@main
+#     with:
+#       image: ghcr.io/devoops-team/frontend
+#       digest: ${{ needs.image.outputs.digest }}
+#       overlay: ${{ vars.GITOPS_OVERLAY }}
+#       app-id: ${{ vars.DEPLOY_APP_ID }}
+#       gitops-repo: ${{ vars.GITOPS_REPO }}
+#     secrets:
+#       app-private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
+#
+# 봇(GitHub App)만 Gitops main ruleset 우회 대상이다. 바꾸는 것은 overlay의 images 항목 하나뿐이다.
+name: update-image
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: 이미지 이름 (태그 · digest 없이). 예 ghcr.io/devoops-team/frontend
+        type: string
+        required: true
+      digest:
+        description: 빌드 출력 digest (sha256:...)
+        type: string
+        required: true
+      overlay:
+        description: Gitops 안 kustomization 디렉터리. 예 onprem/platform/frontend/overlays/onprem
+        type: string
+        required: true
+      app-id:
+        description: GitHub App ID (호출 레포 Variable DEPLOY_APP_ID)
+        type: string
+        required: true
+      gitops-repo:
+        description: owner/name (호출 레포 Variable GITOPS_REPO)
+        type: string
+        required: true
+      branch:
+        description: 반영할 Gitops 브랜치
+        type: string
+        default: main
+    secrets:
+      app-private-key:
+        description: GitHub App 비밀키 (DEPLOY_APP_PRIVATE_KEY)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: update image digest
+    runs-on: ubuntu-24.04
+    env:
+      IMAGE: ${{ inputs.image }}
+      DIGEST: ${{ inputs.digest }}
+      OVERLAY: ${{ inputs.overlay }}
+      GITOPS_REPO: ${{ inputs.gitops-repo }}
+      BRANCH: ${{ inputs.branch }}
+      KUSTOMIZE_VERSION: v5.4.3
+    steps:
+      - name: Check inputs
+        run: |
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::digest 형식이 아님: '$DIGEST'"; exit 1; }
+          [[ "$IMAGE" != *@* && "$IMAGE" != *:* ]] || { echo "::error::image에는 태그 · digest를 붙이지 않음: '$IMAGE'"; exit 1; }
+          [[ "$OVERLAY" != /* && "$OVERLAY" != *..* ]] || { echo "::error::overlay는 레포 안 상대 경로: '$OVERLAY'"; exit 1; }
+          [[ "$GITOPS_REPO" == */* ]] || { echo "::error::gitops-repo는 owner/name: '$GITOPS_REPO'"; exit 1; }
+          echo "owner=${GITOPS_REPO%%/*}" >> "$GITHUB_ENV"
+          echo "name=${GITOPS_REPO#*/}" >> "$GITHUB_ENV"
+
+      - id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ inputs.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+          owner: ${{ env.owner }}
+          repositories: ${{ env.name }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.gitops-repo }}
+          ref: ${{ inputs.branch }}
+          token: ${{ steps.app-token.outputs.token }}
+          path: gitops
+
+      - name: Install kustomize
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
+            | tar xz -C "$RUNNER_TEMP/bin" kustomize
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Update digest and push
+        working-directory: gitops
+        env:
+          BOT_NAME: ${{ steps.app-token.outputs.app-slug }}[bot]
+        run: |
+          test -f "$OVERLAY/kustomization.yaml" || { echo "::error::$OVERLAY/kustomization.yaml 없음"; exit 1; }
+          short_sha="${GITHUB_SHA::7}"
+          git config user.name "$BOT_NAME"
+          git config user.email "${BOT_NAME}@users.noreply.github.com"
+          for attempt in 1 2 3; do
+            (cd "$OVERLAY" && kustomize edit set image "${IMAGE}=${IMAGE}@${DIGEST}")
+            # overlay의 kustomization.yaml 외 다른 파일이 바뀌면 중단
+            changed=$(git diff --name-only)
+            if [ -z "$changed" ]; then echo "이미 ${DIGEST} — 변경 없음"; exit 0; fi
+            [ "$changed" = "$OVERLAY/kustomization.yaml" ] || { echo "::error::예상 밖 변경: $changed"; exit 1; }
+            kustomize build "$OVERLAY" > /dev/null
+            git commit -am "deploy(${IMAGE##*/}): sha-${short_sha}" \
+              -m "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" -m "image: ${IMAGE}@${DIGEST}"
+            git push origin "HEAD:${BRANCH}" && { echo "### ${IMAGE##*/} → \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+            echo "push 실패 — ${BRANCH} 다시 받아 재시도 (${attempt}/3)"
+            git fetch origin "$BRANCH" && git reset --hard "origin/${BRANCH}"
+          done
+          echo "::error::Gitops ${BRANCH} push 실패"; exit 1
