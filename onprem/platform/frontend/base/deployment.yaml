@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: platform
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frontend
+    spec:
+      serviceAccountName: frontend
+      nodeSelector:
+        platform-worker: 'true'
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: frontend
+            topologyKey: kubernetes.io/hostname
+      imagePullSecrets:
+      - name: ghcr-pull
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      volumes: []
+      containers:
+      - name: frontend
+        image: ghcr.io/devoops-team/frontend:configure-me
+        imagePullPolicy: IfNotPresent
+        volumeMounts: []
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+        # nginx가 /api · /swagger · /openapi.yaml을 넘길 백엔드 Service (Frontend nginx.conf.template)
+        - name: BACKEND_URL
+          value: http://backend.platform.svc.cluster.local:8000
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        ports:
+        - name: http
+          containerPort: 8080 # nginx-unprivileged (비root)
+        startupProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+        livenessProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
