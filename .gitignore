@@ -1,0 +1,16 @@
+.env*
+*.pem
+*.key
+kubeconfig*
+*.tfvars
+!*.tfvars.example
+*.local.yaml
+*.local.yml
+*.local.json
+*.vault.yml
+secrets/
+credentials/
+.venv/
+__pycache__/
+.DS_Store
+.vscode/
