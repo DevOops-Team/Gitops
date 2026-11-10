@@ -1,0 +1,32 @@
+# 관리 클러스터 모니터링 수집 층 (Prometheus Agent · kube-state-metrics · Fluent Bit · OTel 게이트웨이).
+# 매니페스트는 Monitoring 레포 deploy/agents/ (ADR-18 · ADR-21 "monitoring/은 Application 자리"). 담당: 이태림
+# 유일하게 automated인 Application: Monitoring main 머지 리뷰가 안전장치 (develop → main PR, CODEOWNERS)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-monitoring-agents
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  project: gpu-platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring                 # gpu-foundation(-20)이 만든 네임스페이스
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Monitoring.git
+    targetRevision: main
+    path: deploy/agents/overlays/onprem
