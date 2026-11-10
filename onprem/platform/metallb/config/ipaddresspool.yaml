@@ -1,0 +1,11 @@
+# 관리 클러스터 서비스 VIP. API VIP .120(kube-vip)과 짝 (모니터링: API .30 · 서비스 .35와 같은 규칙)
+# .126~.129는 관리 클러스터 LB 예비 (「온프레 인프라 설정값」 박기현 확인)
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: platform-vip
+  namespace: metallb-system
+spec:
+  addresses:
+  - 172.30.0.125/32
+  autoAssign: false   # 서비스가 이 풀을 명시적으로 요청할 때만 할당

@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-metallb-config
+  namespace: argocd
+  annotations:
+    # MetalLB CRD · webhook이 뜬 뒤(-15), Traefik(-10) 전에 VIP 풀 준비
+    argocd.argoproj.io/sync-wave: '-12'
+spec:
+  project: gpu-platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: metallb-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    path: onprem/platform/metallb/config

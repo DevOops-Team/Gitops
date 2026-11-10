@@ -1,0 +1,11 @@
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: platform-vip
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - platform-vip
+  nodeSelectors:
+  - matchLabels:
+      platform-worker: 'true'

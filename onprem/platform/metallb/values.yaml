@@ -1,0 +1,11 @@
+# MetalLB L2 (ADR-22 · GPU-115). VIP 172.30.0.125를 Traefik LoadBalancer에 붙인다.
+# kube-vip(master, API VIP .120)와 겹치지 않게 controller · speaker는 worker에서만 돈다.
+controller:
+  nodeSelector:
+    platform-worker: 'true'
+speaker:
+  tolerateMaster: false
+  nodeSelector:
+    platform-worker: 'true'
+  frr:
+    enabled: false   # BGP 미사용, L2만

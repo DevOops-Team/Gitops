@@ -1,10 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# sync-wave 순서: foundation(-20) → traefik · cert-manager · cainjector(-10) → issuer(-5) → frontend · backend(0)
+# sync-wave 순서: foundation(-20) → metallb(-15) → metallb-config(-12) → traefik · cert-manager · cainjector(-10) → issuer(-5) → frontend · backend(0)
 # controllers · multikueue Application은 각 담당 작업에서 추가
 # monitoring-agents(0): Monitoring 레포 deploy/agents (ADR-18 · ADR-21)
 resources:
 - gpu-foundation.yaml
+- gpu-metallb.yaml
+- gpu-metallb-config.yaml
 - gpu-traefik.yaml
 - gpu-cert-manager.yaml
 - gpu-cert-manager-cainjector.yaml
