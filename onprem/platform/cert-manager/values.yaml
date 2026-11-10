@@ -1,3 +1,8 @@
+# 리더 선출 Lease · Role을 kube-system 대신 cert-manager 네임스페이스에 둔다
+# (AppProject gpu-platform은 kube-system 배포를 허용하지 않음)
+global:
+  leaderElection:
+    namespace: cert-manager
 crds:
   enabled: true
 replicaCount: 3
