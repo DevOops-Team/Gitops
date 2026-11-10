@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: platform
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backend
+    spec:
+      serviceAccountName: backend
+      nodeSelector:
+        platform-worker: 'true'
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: backend
+            topologyKey: kubernetes.io/hostname
+      imagePullSecrets:
+      - name: ghcr-pull
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      volumes: []
+      containers:
+      - name: backend
+        image: ghcr.io/devoops-team/backend:configure-me
+        imagePullPolicy: IfNotPresent
+        volumeMounts: []
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: LISTEN_ADDR
+          value: ':8000'
+        - name: TRAINING_NAMESPACE
+          value: training
+        # 브라우저는 Frontend nginx를 거쳐 같은 주소로 부르므로 CORS는 실제로 쓰이지 않는다. 외부 주소만 허용해 둔다.
+        - name: ALLOWED_ORIGIN
+          value: https://devoops.site
+        envFrom:
+        # AWS_REGION · S3_BUCKET · PROGRESS_TABLE · EVENTS_TABLE
+        - configMapRef:
+            name: backend-config
+        # AWS 자격 증명 (Git에 넣지 않음, docs/secrets.md). 없으면 AWS 호출만 실패하고 서버는 뜬다.
+        - secretRef:
+            name: backend-aws
+            optional: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: '1'
+            memory: 512Mi
+        ports:
+        - name: http
+          containerPort: 8000
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+        livenessProbe:
+          tcpSocket:
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
