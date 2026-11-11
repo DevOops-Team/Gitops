@@ -4,7 +4,7 @@ Argo CD가 보는 매니페스트 저장소입니다. 클러스터(온프레미�
 컨트롤러 코드(복구 컨트롤러 · 디스패처 · 재배치기 · 잡 투입기)와 이미지 빌드는 `K8s` 레포에 있습니다.
 
 ```text
-bootstrap/    Argo CD root · project · 클러스터별 Application 목록
+bootstrap/    Argo CD root · project · Application 목록 (온프레 Argo CD가 EKS까지 허브 배포)
 onprem/       매니저 클러스터: platform · controllers · multikueue
 eks/          워커 클러스터: scheduling (base + overlays/eks-{a,b,c})
 monitoring/   onprem 저장 층 · eks 수집 층
