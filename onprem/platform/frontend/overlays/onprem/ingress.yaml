@@ -23,3 +23,13 @@ spec:
             name: frontend
             port:
               number: 3000
+  # 임시: 공인 DNS 전까지 Tailscale에서 https://172.30.0.125 (IP) 로 접속 (Host 무관, 인증서 경고는 감수)
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 3000
