@@ -1,0 +1,26 @@
+# Argo CD Helm OCI 저장소 (공개, 자격 증명 없음). Application이 OCI 차트를 받으려면 enableOCI로 등록돼 있어야 한다
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repo-kueue-charts
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: kueue-charts
+  type: helm
+  url: registry.k8s.io/kueue/charts
+  enableOCI: 'true'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: repo-jobset-charts
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: jobset-charts
+  type: helm
+  url: registry.k8s.io/jobset/charts
+  enableOCI: 'true'

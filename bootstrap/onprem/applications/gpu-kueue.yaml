@@ -25,7 +25,19 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 3m
-  source:
-    repoURL: https://github.com/DevOops-Team/Gitops.git
+  sources:
+  # 공식 Helm 차트 (OCI). 저장소 등록은 bootstrap/onprem/repositories.yaml
+  - repoURL: registry.k8s.io/kueue/charts
+    chart: kueue
+    targetRevision: 0.20.4
+    helm:
+      releaseName: kueue
+      valueFiles:
+      - $values/onprem/multikueue/kueue/values.yaml
+  # 차트 밖: Namespace · nominatedClusterNames 정리 MAP
+  - repoURL: https://github.com/DevOops-Team/Gitops.git
     targetRevision: main
     path: onprem/multikueue/kueue
+  - repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    ref: values
