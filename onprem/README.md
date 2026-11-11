@@ -5,7 +5,7 @@
 | 디렉토리 | 내용 | 로직 담당 |
 |---|---|---|
 | `platform/` | namespace · Traefik · cert-manager(+ ClusterIssuer) · frontend(+ Ingress · Certificate) · backend | - |
-| `multikueue/{kueue,jobset}/` | 매니저 Kueue · JobSet (MultiKueue `dispatcherName` 포함) | - |
+| `multikueue/{kueue,jobset}/` | 매니저 Kueue · JobSet: 공식 Helm 차트(OCI)의 `values.yaml`(설정 · `dispatcherName` 포함) + 차트 밖 Namespace · MAP | - |
 | `multikueue/queues/` | ResourceFlavor · ClusterQueue · LocalQueue · WorkloadPriorityClass · AdmissionCheck · MultiKueueConfig · MultiKueueCluster | 김성모 |
 | `controllers/scheduling-common/` | RelocationRequest CRD · admission policy (dispatcher · relocator · recovery-controller 공용) | 김성모 |
 | `controllers/dispatcher/` | dispatcher (`base` + `overlays/onprem`) | 김성모 |

@@ -25,7 +25,19 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 3m
-  source:
-    repoURL: https://github.com/DevOops-Team/Gitops.git
+  sources:
+  # 공식 Helm 차트 (OCI). 저장소 등록은 bootstrap/onprem/repositories.yaml
+  - repoURL: registry.k8s.io/jobset/charts
+    chart: jobset
+    targetRevision: 0.13.0
+    helm:
+      releaseName: jobset
+      valueFiles:
+      - $values/onprem/multikueue/jobset/values.yaml
+  # 차트 밖: Namespace
+  - repoURL: https://github.com/DevOops-Team/Gitops.git
     targetRevision: main
     path: onprem/multikueue/jobset
+  - repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    ref: values

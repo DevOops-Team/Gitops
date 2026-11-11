@@ -11,6 +11,8 @@ spec:
   - https://traefik.github.io/charts
   - https://charts.jetstack.io
   - https://metallb.github.io/metallb
+  - registry.k8s.io/kueue/charts       # Kueue 공식 Helm 차트 (OCI)
+  - registry.k8s.io/jobset/charts      # JobSet 공식 Helm 차트 (OCI)
   destinations:
   - server: https://kubernetes.default.svc
     namespace: platform
