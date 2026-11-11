@@ -4,7 +4,7 @@ metadata:
   name: gpu-platform
   namespace: argocd
 spec:
-  description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend), later controllers and scheduling
+  description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend · Kueue · JobSet · scheduling controllers)
   sourceRepos:
   - https://github.com/DevOops-Team/Gitops.git
   - https://github.com/DevOops-Team/Monitoring.git   # 모니터링 수집 층 매니페스트 (Monitoring deploy/agents, 이태림)
@@ -24,6 +24,12 @@ spec:
     namespace: monitoring
   - server: https://kubernetes.default.svc
     namespace: metallb-system
+  - server: https://kubernetes.default.svc
+    namespace: kueue-system
+  - server: https://kubernetes.default.svc
+    namespace: jobset-system
+  - server: https://kubernetes.default.svc
+    namespace: kube-system     # Kueue visibility API의 extension-apiserver-authentication-reader RoleBinding 하나
   clusterResourceWhitelist:
   - group: ''
     kind: Namespace
@@ -37,6 +43,16 @@ spec:
     kind: MutatingWebhookConfiguration
   - group: admissionregistration.k8s.io
     kind: ValidatingWebhookConfiguration
+  - group: admissionregistration.k8s.io
+    kind: MutatingAdmissionPolicy           # Kueue nominatedClusterNames 정리 (GPU-129)
+  - group: admissionregistration.k8s.io
+    kind: MutatingAdmissionPolicyBinding
+  - group: admissionregistration.k8s.io
+    kind: ValidatingAdmissionPolicy         # scheduling admission policy (GPU-131)
+  - group: admissionregistration.k8s.io
+    kind: ValidatingAdmissionPolicyBinding
+  - group: apiregistration.k8s.io
+    kind: APIService                        # Kueue visibility API
   - group: cert-manager.io
     kind: ClusterIssuer
   - group: kueue.x-k8s.io
@@ -49,5 +65,7 @@ spec:
     kind: MultiKueueCluster
   - group: kueue.x-k8s.io
     kind: MultiKueueConfig
+  - group: kueue.x-k8s.io
+    kind: WorkloadPriorityClass
   - group: networking.k8s.io
     kind: IngressClass
