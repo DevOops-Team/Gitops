@@ -1,0 +1,6 @@
+# kustomize images 변환을 Deployment env 값에도 적용한다.
+# overlay의 images 항목 이름과 정확히 같은 값만 바뀐다 (예: CHECKPOINT_IMAGE=ghcr.io/devoops-team/checkpoint → …@sha256:…).
+# Data CI 봇이 이 overlay에 checkpoint digest를 넣으면 env가 바뀌고 Backend가 rollout된다.
+images:
+- path: spec/template/spec/containers[]/env[]/value
+  kind: Deployment
