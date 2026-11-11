@@ -7,3 +7,5 @@ resources:
 - service.yaml
 - poddisruptionbudget.yaml
 - rbac.yaml
+configurations:
+- image-paths.yaml
