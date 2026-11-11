@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# dispatcher (로직 K8s scheduling/dispatcher, 김성모). 원본 K8s 1cfe597^:scheduling/controllers/deploy/controllers.yaml
+# Kueue MultiKueue dispatcherName scheduling.gpu-project.io/binpack: Workload.status.nominatedClusterNames에 워커 하나를 적는다
+resources:
+- serviceaccount.yaml
+- rbac.yaml
+- deployment.yaml
+- poddisruptionbudget.yaml

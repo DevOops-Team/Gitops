@@ -1,0 +1,49 @@
+# 레플리카 3개를 platform-worker 노드(worker1~3)에 하나씩. Lease로 리더 하나만 일하고 둘은 대기
+# 노드 하나가 죽으면 남은 둘 중 하나가 LEASE_SECONDS(15s) 안에 이어받음
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatcher
+  namespace: platform
+  labels: {app.kubernetes.io/name: dispatcher, app.kubernetes.io/part-of: scheduling}
+spec:
+  replicas: 3
+  strategy:                      # 노드 3대에 하나씩이라 하나 내리고 하나 올림 (maxSurge 0)
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+  selector:
+    matchLabels: {app.kubernetes.io/name: dispatcher}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: dispatcher, app.kubernetes.io/part-of: scheduling}
+    spec:
+      serviceAccountName: dispatcher
+      nodeSelector: {platform-worker: 'true'}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app.kubernetes.io/name: dispatcher}}
+            topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true       # 이미지 USER 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: main
+        image: ghcr.io/devoops-team/dispatcher   # digest는 overlays/onprem images: (봇이 갱신, ADR-23)
+        # command 없음: 이미지 CMD python dispatcher/dispatcher.py
+        env:
+        - name: POD_NAME         # Lease holderIdentity
+          valueFrom: {fieldRef: {fieldPath: metadata.name}}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:            # kubernetes 클라이언트가 워커 kubeconfig의 CA · 인증서를 임시 파일로 씀
+        - {name: tmp, mountPath: /tmp}
+        resources:
+          requests: {cpu: 50m, memory: 64Mi}
+          limits: {memory: 256Mi}
+      volumes:
+      - name: tmp
+        emptyDir: {sizeLimit: 16Mi}
