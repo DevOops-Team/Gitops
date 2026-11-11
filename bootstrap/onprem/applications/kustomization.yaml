@@ -14,5 +14,3 @@ resources:
 - gpu-frontend.yaml
 - gpu-backend.yaml
 - gpu-monitoring-agents.yaml
-- gpu-recovery-controller.yaml
-- gpu-multikueue.yaml
