@@ -1,0 +1,73 @@
+# dispatcher 권한: Workload 지명 + 워커 kubeconfig 읽기 + 리더 선출 Lease
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: scheduling-dispatcher
+rules:
+- apiGroups: [kueue.x-k8s.io]
+  resources: [workloads]
+  verbs: [get, list, watch, patch]          # 지명 시각 · 시도한 클러스터 어노테이션
+- apiGroups: [kueue.x-k8s.io]
+  resources: [workloads/status]
+  verbs: [patch]                            # status.nominatedClusterNames
+- apiGroups: [kueue.x-k8s.io]
+  resources: [multikueueclusters]
+  verbs: [get, list, watch, patch]          # patch: 펜싱 확인 어노테이션 (GPU-125 ack_fenced)
+- apiGroups: [jobset.x-k8s.io]
+  resources: [jobsets]
+  verbs: [get]
+- apiGroups: [batch]
+  resources: [jobs]
+  verbs: [get]
+- apiGroups: [scheduling.devoops.site]      # 진행 중인 재배치의 원래 클러스터를 재제출 잡 몫으로 지킴 (읽기만)
+  resources: [relocationrequests]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: scheduling-dispatcher
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: scheduling-dispatcher}
+subjects:
+- {kind: ServiceAccount, name: dispatcher, namespace: platform}
+---
+# 워커 kubeconfig: MultiKueue가 쓰는 Secret을 이름 지정으로만 (IaC가 kueue-system에 등록, GPU-126)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scheduling-dispatcher-kubeconfig
+  namespace: kueue-system
+rules:
+- apiGroups: [""]
+  resources: [secrets]
+  resourceNames: [eks-a-kubeconfig, eks-b-kubeconfig, eks-c-kubeconfig]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scheduling-dispatcher-kubeconfig
+  namespace: kueue-system
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: scheduling-dispatcher-kubeconfig}
+subjects:
+- {kind: ServiceAccount, name: dispatcher, namespace: platform}
+---
+# 리더 선출 Lease platform/scheduling-dispatcher (common/leader.py)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: scheduling-dispatcher-leader
+  namespace: platform
+rules:
+- apiGroups: [coordination.k8s.io]
+  resources: [leases]
+  verbs: [get, create, update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scheduling-dispatcher-leader
+  namespace: platform
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: scheduling-dispatcher-leader}
+subjects:
+- {kind: ServiceAccount, name: dispatcher, namespace: platform}
