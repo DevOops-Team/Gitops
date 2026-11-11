@@ -8,6 +8,7 @@ bootstrap/    Argo CD root · project · Application 목록 (온프레 Argo CD�
 onprem/       매니저 클러스터: platform · controllers · multikueue
 eks/          워커 클러스터: scheduling (base + overlays/eks-{a,b,c})
 monitoring/   onprem 저장 층 · eks 수집 층
+upstream/     외부 공식 릴리스 매니페스트 (Kueue · JobSet), onprem · eks가 공용 참조
 tools/        매니페스트 생성 · 검증 스크립트 (배포 대상 아님)
 ```
 

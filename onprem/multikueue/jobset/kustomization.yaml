@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 관리 클러스터 JobSet v0.13.0 (ADR-9). JobSet 웹훅도 failurePolicy Fail이라 Pod 하나면 재시작 동안 JobSet 생성이 거부됨 -> 3중화
+resources:
+- ../../../upstream/jobset-v0.13.0
+- pdb.yaml
+patches:
+- target:
+    kind: Deployment
+    name: jobset-controller-manager
+  patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: jobset-controller-manager
+    spec:
+      replicas: 3
+      strategy:                # 노드 3대에 하나씩이라 하나 내리고 하나 올림 (maxSurge 0)
+        type: RollingUpdate
+        rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+      template:
+        spec:
+          nodeSelector: {platform-worker: 'true'}
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector: {matchLabels: {app.kubernetes.io/name: jobset}}
+                topologyKey: kubernetes.io/hostname

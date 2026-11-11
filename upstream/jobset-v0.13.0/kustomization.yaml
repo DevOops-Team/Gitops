@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 공식 릴리스 매니페스트 (네임스페이스 jobset-system 그대로). 모든 클러스터 공통 변경은 CPU requests 하나
+resources:
+- manifests.yaml
+patches:
+# CPU requests 500m -> 250m: 관리 worker 1대 장애 시 CPU 여유, EKS 시스템 노드 공간 확보. limits · memory는 기본값
+- target:
+    kind: Deployment
+    name: jobset-controller-manager
+  patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: jobset-controller-manager
+    spec:
+      template:
+        spec:
+          containers:
+          - name: manager
+            resources:
+              requests:
+                cpu: 250m
