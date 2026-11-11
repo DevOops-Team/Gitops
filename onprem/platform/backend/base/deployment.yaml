@@ -55,6 +55,10 @@ spec:
         # 브라우저는 Frontend nginx를 거쳐 같은 주소로 부르므로 CORS는 실제로 쓰이지 않는다. 외부 주소만 허용해 둔다.
         - name: ALLOWED_ORIGIN
           value: https://devoops.site
+        # 학습 JobSet의 ckpt-init · ckpt-sidecar 이미지 (Data 레포 checkpoint/). Backend는 실행하지 않고 JobSet에 적기만 한다.
+        # 값은 overlay images 항목(봇, ADR-23)이 @sha256 digest로 바꾼다 — image-paths.yaml 참고
+        - name: CHECKPOINT_IMAGE
+          value: ghcr.io/devoops-team/checkpoint
         envFrom:
         # AWS_REGION · S3_BUCKET · PROGRESS_TABLE · EVENTS_TABLE
         - configMapRef:
