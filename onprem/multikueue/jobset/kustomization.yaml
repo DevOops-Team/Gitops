@@ -1,0 +1,5 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 차트 밖에서 gpu-jobset이 함께 배포하는 것. 차트 values는 values.yaml
+resources:
+- namespace.yaml

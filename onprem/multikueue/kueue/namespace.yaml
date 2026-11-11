@@ -1,0 +1,8 @@
+# Helm 차트는 Namespace를 만들지 않는다. Application gpu-kueue가 같이 관리하고, 앱을 지워도 남게 Prune=false
+# (kueue-system에는 IaC가 넣는 MultiKueue kubeconfig Secret이 있다)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kueue-system
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false

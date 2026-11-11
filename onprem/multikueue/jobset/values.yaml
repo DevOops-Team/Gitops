@@ -1,0 +1,21 @@
+# 관리 클러스터 JobSet v0.13.0 (ADR-9) — 공식 Helm 차트 oci://registry.k8s.io/jobset/charts/jobset 의 values
+# JobSet 웹훅도 failurePolicy Fail이라 Pod 하나면 재시작 동안 JobSet 생성이 거부됨 -> 3중화
+controller:
+  replicas: 3
+  nodeSelector: {platform-worker: 'true'}
+  # 차트에 Deployment strategy 값이 없어(maxSurge 기본 25%) required로 두면 롤아웃 때 새 Pod 자리가 없어 멈춘다.
+  # preferred로 노드당 하나씩 펼치고, 업그레이드하는 잠깐만 한 노드에 둘이 올 수 있다
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector: {matchLabels: {app.kubernetes.io/name: jobset, app.kubernetes.io/component: controller}}
+          topologyKey: kubernetes.io/hostname
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: null
+    maxUnavailable: 1
+  resources:                   # CPU requests 500m -> 250m (Kueue와 같은 이유). limits · memory는 기본값
+    requests: {cpu: 250m, memory: 128Mi}
+    limits: {cpu: '2', memory: 4Gi}

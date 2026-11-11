@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-scheduling-common
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+spec:
+  project: gpu-platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform
+  syncPolicy:
+    # ADR-23: 이미지 digest는 봇이 Gitops main에 커밋 → 자동 반영
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    path: onprem/controllers/scheduling-common

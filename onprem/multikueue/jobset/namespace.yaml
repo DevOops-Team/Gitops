@@ -1,0 +1,7 @@
+# Helm 차트는 Namespace를 만들지 않는다. Application gpu-jobset이 같이 관리하고, 앱을 지워도 남게 Prune=false
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jobset-system
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false

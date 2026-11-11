@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 차트 밖에서 gpu-kueue가 함께 배포하는 것. 차트 values(설정 포함)는 values.yaml
+# - nominatedClusterNames 정리 MAP (우리 정책, 공식 차트에 없음)
+resources:
+- namespace.yaml
+- workload-map.yaml
+patches:
+# K8s 1.35에는 MAP v1이 없음 (1.36 GA). v1beta1로 내려서 적용 (API 서버 feature gate 켜짐, ADR-9)
+- target:
+    group: admissionregistration.k8s.io
+    version: v1
+    kind: MutatingAdmissionPolicy
+  patch: |-
+    - op: replace
+      path: /apiVersion
+      value: admissionregistration.k8s.io/v1beta1
+- target:
+    group: admissionregistration.k8s.io
+    version: v1
+    kind: MutatingAdmissionPolicyBinding
+  patch: |-
+    - op: replace
+      path: /apiVersion
+      value: admissionregistration.k8s.io/v1beta1

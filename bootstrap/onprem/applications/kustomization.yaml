@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# sync-wave 순서: foundation(-20) → metallb(-15) → metallb-config(-12) → traefik · cert-manager · cainjector(-10) → issuer(-5) → frontend · backend(0)
-# controllers · multikueue Application은 각 담당 작업에서 추가
+# sync-wave 순서: foundation(-20) → metallb(-15) → metallb-config(-12) → traefik · cert-manager · cainjector(-10)
+#   → jobset(-8) → kueue(-7) → issuer · multikueue-queues · scheduling-common(-5) → frontend · backend · dispatcher(0)
 # monitoring-agents(0): Monitoring 레포 deploy/agents (ADR-18 · ADR-21)
 resources:
 - gpu-foundation.yaml
@@ -11,6 +11,11 @@ resources:
 - gpu-cert-manager.yaml
 - gpu-cert-manager-cainjector.yaml
 - gpu-cert-manager-issuer.yaml
+- gpu-jobset.yaml
+- gpu-kueue.yaml
+- gpu-multikueue-queues.yaml
+- gpu-scheduling-common.yaml
 - gpu-frontend.yaml
 - gpu-backend.yaml
+- gpu-dispatcher.yaml
 - gpu-monitoring-agents.yaml

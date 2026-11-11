@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-kueue
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '-7'
+spec:
+  project: gpu-platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kueue-system
+  syncPolicy:
+    # 버전 고정(ADR-9)이라 Git 변경 = 의도한 변경. 웹훅 failurePolicy Fail이라 손으로 바꾼 상태가 남지 않게 selfHeal
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    - ServerSideApply=true     # CRD가 커서 client-side apply의 last-applied annotation 한도(256KiB)를 넘음
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  sources:
+  # 공식 Helm 차트 (OCI). 저장소 등록은 bootstrap/onprem/repositories.yaml
+  - repoURL: registry.k8s.io/kueue/charts
+    chart: kueue
+    targetRevision: 0.20.4
+    helm:
+      releaseName: kueue
+      valueFiles:
+      - $values/onprem/multikueue/kueue/values.yaml
+  # 차트 밖: Namespace · nominatedClusterNames 정리 MAP
+  - repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    path: onprem/multikueue/kueue
+  - repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    ref: values

@@ -1,0 +1,42 @@
+# nominatedClusterNames 정리: 워커가 정해지거나(status.clusterName) 축출되면 dispatcher 지명을 비운다
+# 원본 K8s 1cfe597^:scheduling/kueue/manager/kueue-v0.20.4-workload-map.yaml (v1로 쓰고 kustomization에서 v1beta1로 내림)
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: clear-nominated-cluster-names
+spec:
+  failurePolicy: Fail
+  matchConditions:
+  - expression: has(object.status) && has(object.status.nominatedClusterNames) &&
+      size(object.status.nominatedClusterNames) > 0
+    name: has-nominated-clusters
+  - expression: (has(object.status.clusterName) && (!has(oldObject.status) || !has(oldObject.status.clusterName)
+      || oldObject.status.clusterName == '')) || (has(object.status.conditions) &&
+      object.status.conditions.exists(c, c.type == 'Evicted' && c.status == 'True')
+      && (!has(oldObject.status) || !has(oldObject.status.conditions) || !oldObject.status.conditions.exists(c,
+      c.type == 'Evicted' && c.status == 'True')))
+    name: trigger
+  matchConstraints:
+    resourceRules:
+    - apiGroups:
+      - kueue.x-k8s.io
+      apiVersions:
+      - v1beta2
+      operations:
+      - UPDATE
+      resources:
+      - workloads
+      - workloads/status
+  mutations:
+  - jsonPatch:
+      expression: '[JSONPatch{op: "replace", path: "/status/nominatedClusterNames",
+        value: []}]'
+    patchType: JSONPatch
+  reinvocationPolicy: Never
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: clear-nominated-cluster-names-binding
+spec:
+  policyName: clear-nominated-cluster-names

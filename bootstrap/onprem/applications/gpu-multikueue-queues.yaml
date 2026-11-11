@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-multikueue-queues
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+spec:
+  project: gpu-platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: training
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    retry:                     # Kueue 웹훅이 뜨기 전이면 거절되므로 재시도
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    path: onprem/multikueue/queues
