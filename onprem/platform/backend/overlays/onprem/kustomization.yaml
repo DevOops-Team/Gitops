@@ -6,3 +6,6 @@ images:
 - digest: sha256:92dc2ff7d9a770d082e54d78a3d1e4d9bde581d27ca89aa45553c2b8db62f860
   name: ghcr.io/devoops-team/backend
   newName: ghcr.io/devoops-team/backend
+- digest: sha256:e05195dff7bede24c9f925fb3bce2200760b67f1fc1ed14ff71749a7b9fd069d
+  name: ghcr.io/devoops-team/checkpoint
+  newName: ghcr.io/devoops-team/checkpoint
