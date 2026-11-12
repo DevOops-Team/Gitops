@@ -1,0 +1,33 @@
+# EKS 워커 배포 범위. 온프레 Argo CD가 허브로 EKS에 원격 배포한다 (EKS에는 Argo CD 없음).
+# 목적지는 Argo CD 클러스터 Secret 이름(eks-a · eks-b · eks-c, IaC가 EKS 생성 · 삭제 때 등록 · 삭제 — GPU-126)
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gpu-eks
+  namespace: argocd
+spec:
+  description: EKS GPU workers (Kueue · JobSet · worker queues · training namespace), deployed from the on-prem hub
+  sourceRepos:
+  - https://github.com/DevOops-Team/Gitops.git
+  - registry.k8s.io/kueue/charts
+  - registry.k8s.io/jobset/charts
+  destinations:
+  - name: 'eks-*'
+    namespace: kueue-system
+  - name: 'eks-*'
+    namespace: jobset-system
+  - name: 'eks-*'
+    namespace: training
+  - name: 'eks-*'
+    namespace: kube-system     # Kueue visibility API의 extension-apiserver-authentication-reader RoleBinding
+  clusterResourceWhitelist:
+  - {group: '', kind: Namespace}
+  - {group: apiextensions.k8s.io, kind: CustomResourceDefinition}
+  - {group: rbac.authorization.k8s.io, kind: ClusterRole}
+  - {group: rbac.authorization.k8s.io, kind: ClusterRoleBinding}
+  - {group: admissionregistration.k8s.io, kind: MutatingWebhookConfiguration}
+  - {group: admissionregistration.k8s.io, kind: ValidatingWebhookConfiguration}
+  - {group: apiregistration.k8s.io, kind: APIService}
+  - {group: kueue.x-k8s.io, kind: ResourceFlavor}
+  - {group: kueue.x-k8s.io, kind: ClusterQueue}
+  - {group: kueue.x-k8s.io, kind: WorkloadPriorityClass}

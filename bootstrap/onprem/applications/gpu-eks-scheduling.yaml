@@ -1,0 +1,61 @@
+# EKS 워커마다 Application 하나 (gpu-eks-scheduling-<클러스터>). Argo CD 클러스터 Secret에
+# 라벨 devoops.site/gpu-worker: "true"가 있는 클러스터만 대상: IaC가 EKS를 만들 때 Secret을 등록하면
+# 생기고, 지우면 없어진다(GPU-126). 고정 Application 3개를 두면 없는 클러스터 쪽이 계속 오류가 난다.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: gpu-eks-scheduling
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          devoops.site/gpu-worker: 'true'
+  syncPolicy:
+    preserveResourcesOnDeletion: true   # 클러스터가 사라질 때 리소스 삭제를 시도하지 않는다
+  template:
+    metadata:
+      name: 'gpu-eks-scheduling-{{.name}}'
+      namespace: argocd
+    spec:
+      project: gpu-eks
+      destination:
+        name: '{{.name}}'
+        namespace: training
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=false
+        - ServerSideApply=true    # Kueue CRD가 커서 client-side apply annotation 한도를 넘음
+        retry:
+          limit: 5
+          backoff:
+            duration: 15s
+            factor: 2
+            maxDuration: 5m
+      sources:
+      - repoURL: registry.k8s.io/kueue/charts
+        chart: kueue
+        targetRevision: 0.20.4
+        helm:
+          releaseName: kueue
+          valueFiles:
+          - $values/eks/scheduling/base/kueue-values.yaml
+      - repoURL: registry.k8s.io/jobset/charts
+        chart: jobset
+        targetRevision: 0.13.0
+        helm:
+          releaseName: jobset
+          valueFiles:
+          - $values/eks/scheduling/base/jobset-values.yaml
+      - repoURL: https://github.com/DevOops-Team/Gitops.git
+        targetRevision: main
+        path: 'eks/scheduling/overlays/{{.name}}'
+      - repoURL: https://github.com/DevOops-Team/Gitops.git
+        targetRevision: main
+        ref: values

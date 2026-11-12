@@ -1,0 +1,6 @@
+# EKS 워커 JobSet v0.13.0 — 공식 Helm 차트 oci://registry.k8s.io/jobset/charts/jobset 의 values (모든 EKS 공통)
+controller:
+  replicas: 1                  # EKS 시스템(CPU) 노드 1대
+  resources:
+    requests: {cpu: 250m, memory: 128Mi}
+    limits: {cpu: '2', memory: 4Gi}

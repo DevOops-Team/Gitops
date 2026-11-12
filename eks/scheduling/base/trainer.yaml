@@ -1,0 +1,18 @@
+# 학습 Pod ServiceAccount (JobSet 템플릿 합의안). EKS Pod Identity가 training/trainer → <cluster>-trainer-role
+# 로 연결한다 (IaC terraform/TRAINING-IAM.md, 어노테이션 없음). GHCR private 이미지(trainer · checkpoint)는 ghcr-pull로 받는다
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trainer
+  namespace: training
+imagePullSecrets:
+- name: ghcr-pull              # IaC가 넣는다 (Git에 넣지 않음)
+---
+# ckpt-init · ckpt-sidecar가 자기가 도는 클러스터를 안다 (JobSet은 워커마다 그대로 복사되므로 env로는 구분 불가)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devoops-cluster-info
+  namespace: training
+data:
+  CLUSTER_NAME: set-by-overlay

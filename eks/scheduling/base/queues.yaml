@@ -1,0 +1,88 @@
+# 워커 큐: 관리 클러스터와 같은 LocalQueue · WorkloadPriorityClass 이름 (MultiKueue가 복사본을 같은 이름으로 넣는다)
+# 쿼터는 overlay에서 클러스터의 실제 GPU 노드 수로 맞춘다. 빌려주기는 한 방향만: 학습 몫 → 복구 잡
+# sync-wave 1: 같은 앱의 Kueue 웹훅(wave 0)이 뜬 뒤에 만든다
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ResourceFlavor
+metadata:
+  name: gpu
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+spec:
+  nodeLabels:
+    devoops/gpu: 'true'        # IaC GPU 노드그룹 라벨 (dispatcher GPU_NODE_SELECTOR와 같음)
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ClusterQueue
+metadata:
+  name: train-cq
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+spec:
+  cohortName: training
+  namespaceSelector: {}
+  resourceGroups:
+  - coveredResources: ["nvidia.com/gpu"]
+    flavors:
+    - name: gpu
+      resources:
+      - name: nvidia.com/gpu
+        nominalQuota: "4"      # full 구성 학습 노드 수. overlay에서 바꿈
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: ClusterQueue
+metadata:
+  name: recovery-cq
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+spec:
+  cohortName: training
+  namespaceSelector:           # 복구 몫은 학습 잡 네임스페이스에서만
+    matchLabels: {kubernetes.io/metadata.name: training}
+  resourceGroups:
+  - coveredResources: ["nvidia.com/gpu"]
+    flavors:
+    - name: gpu
+      resources:
+      - name: nvidia.com/gpu
+        nominalQuota: "1"      # 예비 노드 수. overlay에서 바꿈
+        lendingLimit: "0"      # 복구 몫은 학습 잡에 안 빌려줌
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: LocalQueue
+metadata:
+  name: queue-heavy
+  namespace: training
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+spec:
+  clusterQueue: train-cq
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: LocalQueue
+metadata:
+  name: queue-light
+  namespace: training
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+spec:
+  clusterQueue: train-cq
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: LocalQueue
+metadata:
+  name: queue-recovery
+  namespace: training
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+spec:
+  clusterQueue: recovery-cq
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: WorkloadPriorityClass
+metadata:
+  name: training
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+value: 100
+description: "일반 학습 잡"
+---
+apiVersion: kueue.x-k8s.io/v1beta2
+kind: WorkloadPriorityClass
+metadata:
+  name: recovery
+  annotations: {argocd.argoproj.io/sync-wave: '1'}
+value: 1000
+description: "장애 후 재제출 잡. 대기열 맨 앞"
