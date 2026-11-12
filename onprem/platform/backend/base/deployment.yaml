@@ -59,8 +59,11 @@ spec:
         # 값은 overlay images 항목(봇, ADR-23)이 @sha256 digest로 바꾼다 — image-paths.yaml 참고
         - name: CHECKPOINT_IMAGE
           value: ghcr.io/devoops-team/checkpoint
+        # 학습 JobSet의 trainer 이미지 (Backend 레포 trainer/, train.py 포함). Backend CI 봇이 digest를 넣는다
+        - name: TRAINER_IMAGE
+          value: ghcr.io/devoops-team/trainer
         envFrom:
-        # AWS_REGION · S3_BUCKET · PROGRESS_TABLE · EVENTS_TABLE
+        # AWS_REGION · S3_BUCKET · FENCING_TABLE · PROGRESS_TABLE · KAFKA_BOOTSTRAP · KAFKA_TOPIC_LIFECYCLE
         - configMapRef:
             name: backend-config
         # AWS 자격 증명 (Git에 넣지 않음, docs/secrets.md). 없으면 AWS 호출만 실패하고 서버는 뜬다.
