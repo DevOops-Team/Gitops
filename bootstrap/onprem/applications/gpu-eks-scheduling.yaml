@@ -44,6 +44,7 @@ spec:
         targetRevision: 0.20.4
         helm:
           releaseName: kueue
+          namespace: kueue-system   # 없으면 destination(training)에 설치된다
           valueFiles:
           - $values/eks/scheduling/base/kueue-values.yaml
       - repoURL: registry.k8s.io/jobset/charts
@@ -51,6 +52,7 @@ spec:
         targetRevision: 0.13.0
         helm:
           releaseName: jobset
+          namespace: jobset-system
           valueFiles:
           - $values/eks/scheduling/base/jobset-values.yaml
       - repoURL: https://github.com/DevOops-Team/Gitops.git
