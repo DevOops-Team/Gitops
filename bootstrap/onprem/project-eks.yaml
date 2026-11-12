@@ -6,11 +6,12 @@ metadata:
   name: gpu-eks
   namespace: argocd
 spec:
-  description: EKS GPU workers (Kueue · JobSet · worker queues · training namespace), deployed from the on-prem hub
+  description: EKS GPU workers (Kueue · JobSet · NVIDIA device plugin · worker queues · training namespace), deployed from the on-prem hub
   sourceRepos:
   - https://github.com/DevOops-Team/Gitops.git
   - registry.k8s.io/kueue/charts
   - registry.k8s.io/jobset/charts
+  - https://nvidia.github.io/k8s-device-plugin
   destinations:
   - name: 'eks-*'
     namespace: kueue-system

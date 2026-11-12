@@ -1,0 +1,14 @@
+# NVIDIA device plugin (GPU를 nvidia.com/gpu 자원으로 노출). 공식 차트 nvidia-device-plugin 0.20.1.
+# 값은 IaC network root output gpu_bootstrap과 같다: GPU 노드(devoops/gpu=true)에만, GPU · 예비 taint 허용.
+# 예전에는 클러스터마다 손으로 helm install 했다 — 이제 클러스터가 등록되면(GPU-142) 자동 설치된다.
+nodeSelector:
+  devoops/gpu: "true"
+affinity: null
+tolerations:
+- key: nvidia.com/gpu
+  operator: Exists
+  effect: NoSchedule
+- key: devoops/spare
+  operator: Equal
+  value: "true"
+  effect: NoSchedule
