@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# EKS 워커 공통 (클러스터 이름 없음). Kueue · JobSet은 같은 Application이 Helm 차트로 설치한다 (kueue-values.yaml · jobset-values.yaml)
+resources:
+- namespaces.yaml
+- trainer.yaml
+- queues.yaml
+- dispatcher-read-rbac.yaml

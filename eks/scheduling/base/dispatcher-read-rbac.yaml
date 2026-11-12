@@ -1,0 +1,19 @@
+# dispatcher(관리 클러스터)는 MultiKueue와 같은 kubeconfig(kueue-system/multikueue-sa 토큰)로 워커를 읽는다.
+# IaC multikueue-remote가 만드는 multikueue-sa-role에는 잡 생성 권한만 있어서, 빈 GPU 계산에 쓰는
+# nodes · pods 읽기만 여기서 더한다 (clusterqueues get은 그 역할에 있음). 노드 수정은 relocator 전용 SA로 분리
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: devoops-dispatcher-read
+rules:
+- apiGroups: [""]
+  resources: [nodes, pods]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: devoops-dispatcher-read
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: devoops-dispatcher-read}
+subjects:
+- {kind: ServiceAccount, name: multikueue-sa, namespace: kueue-system}

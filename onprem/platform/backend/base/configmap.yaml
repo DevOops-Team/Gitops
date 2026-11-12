@@ -5,7 +5,10 @@ metadata:
   namespace: platform
 data:
   AWS_REGION: us-east-2
-  # infra 20-data의 bucket_name (bucket_prefix라 apply할 때마다 이름이 바뀐다). 재구축 후 실제 값으로 바꾼다.
-  S3_BUCKET: replace-me-20-data-bucket-name
-  PROGRESS_TABLE: devoops-job-progress
-  EVENTS_TABLE: devoops-job-events
+  # IaC prod/data: 체크포인트 버킷 하나에 code/ · datasets/ · jobs/ (ADR-14)
+  S3_BUCKET: devoops-prod-ckpt-354363695096-us-east-2
+  FENCING_TABLE: devoops-prod-fencing
+  PROGRESS_TABLE: devoops-prod-job-progress
+  # 온프레 Kafka 브로커 (ADR-7 · ADR-8). Backend가 job.submitted를 보내고, JobSet의 ckpt-sidecar에도 넘긴다
+  KAFKA_BOOTSTRAP: 172.30.0.40:9092,172.30.0.41:9092,172.30.0.42:9092
+  KAFKA_TOPIC_LIFECYCLE: job.lifecycle
