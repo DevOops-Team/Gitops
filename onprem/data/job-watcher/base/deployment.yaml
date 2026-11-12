@@ -1,0 +1,45 @@
+# Pod 1개 (ADR-29). 두 개가 동시에 뜨면 같은 사건을 두 번 보내므로 배포 때도 Recreate:
+# 기존 Pod가 완전히 내려간 뒤 새 Pod를 띄운다. 그 사이 놓친 변화는 새 Pod가 시작할 때
+# 전체 목록(list)을 다시 받아 판정하고, event_id가 상태로 정해져 수집기에서 한 번만 쌓인다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: job-watcher
+  namespace: data-system
+  labels: {app.kubernetes.io/name: job-watcher, app.kubernetes.io/part-of: data}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: job-watcher}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: job-watcher, app.kubernetes.io/part-of: data}
+    spec:
+      serviceAccountName: job-watcher
+      nodeSelector: {platform-worker: 'true'}
+      terminationGracePeriodSeconds: 30   # SIGTERM → Kafka flush 최대 10초
+      securityContext:
+        runAsNonRoot: true                # 이미지 USER 1000
+        runAsUser: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: main
+        image: ghcr.io/devoops-team/job-watcher   # digest는 overlays/onprem images: (Data CI 봇이 갱신, ADR-23)
+        # command 없음: 이미지 CMD python -m watcher.main
+        envFrom:
+        - configMapRef: {name: job-watcher}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: tmp, mountPath: /tmp}
+        resources:
+          requests: {cpu: 20m, memory: 64Mi}
+          limits: {memory: 256Mi}
+      volumes:
+      - name: tmp
+        emptyDir: {sizeLimit: 16Mi}
