@@ -18,4 +18,5 @@ resources:
 - gpu-frontend.yaml
 - gpu-backend.yaml
 - gpu-dispatcher.yaml
+- gpu-eks-scheduling.yaml     # ApplicationSet: EKS 워커마다 Application (GPU-133)
 - gpu-monitoring-agents.yaml
