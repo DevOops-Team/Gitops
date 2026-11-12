@@ -9,3 +9,6 @@ images:
 - digest: sha256:e05195dff7bede24c9f925fb3bce2200760b67f1fc1ed14ff71749a7b9fd069d
   name: ghcr.io/devoops-team/checkpoint
   newName: ghcr.io/devoops-team/checkpoint
+- digest: sha256:aa47e3fa4db03fb84013573af259f4dd33f19b1336c2ed1d35081ae9ce92e010
+  name: ghcr.io/devoops-team/trainer
+  newName: ghcr.io/devoops-team/trainer
