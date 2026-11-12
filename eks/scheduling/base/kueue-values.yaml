@@ -27,6 +27,13 @@ managerConfig:
         Workload.kueue.x-k8s.io: 10
     health:
       healthProbeBindAddress: :8081
+    # 큐 할당량은 GPU만 센다(ADR · clusterqueue.yaml). cpu · memory 요청은 할당량 계산에서 뺀다.
+    # 빼지 않으면 coveredResources에 없는 자원이라 NoMatchingFlavor로 영원히 대기한다.
+    resources:
+      excludeResourcePrefixes:
+      - cpu
+      - memory
+      - ephemeral-storage
     integrations:
       frameworks:
       - batch/job
