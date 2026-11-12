@@ -55,6 +55,14 @@ spec:
           namespace: jobset-system
           valueFiles:
           - $values/eks/scheduling/base/jobset-values.yaml
+      - repoURL: https://nvidia.github.io/k8s-device-plugin
+        chart: nvidia-device-plugin
+        targetRevision: 0.20.1
+        helm:
+          releaseName: nvidia-device-plugin
+          namespace: kube-system      # GPU 노드에서 nvidia.com/gpu를 노출 (GPU-142, 예전 수동 helm install)
+          valueFiles:
+          - $values/eks/scheduling/base/nvidia-device-plugin-values.yaml
       - repoURL: https://github.com/DevOops-Team/Gitops.git
         targetRevision: main
         path: 'eks/scheduling/overlays/{{.name}}'
