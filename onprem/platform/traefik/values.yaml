@@ -35,6 +35,10 @@ ports:
   websecure:
     expose:
       default: true
+    # 학습 제출은 모델 폴더(최대 2GiB) + 데이터(최대 1GiB) 업로드다. Traefik v3 기본 readTimeout 60s면 중간에 끊긴다
+    transport:
+      respondingTimeouts:
+        readTimeout: 1h
 nodeSelector:
   platform-worker: 'true'
 tolerations: []
