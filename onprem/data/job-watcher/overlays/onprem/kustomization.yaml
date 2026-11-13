@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+images:
+- digest: sha256:7ec618f6ffee63ecb2ca2e1c1087a90819122b25f4c519d5dfcba337f760f685
+  name: ghcr.io/devoops-team/job-watcher
+  newName: ghcr.io/devoops-team/job-watcher

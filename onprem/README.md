@@ -10,8 +10,10 @@
 | `controllers/scheduling-common/` | RelocationRequest CRD · admission policy (dispatcher · relocator · recovery-controller 공용) | 김성모 |
 | `controllers/dispatcher/` | dispatcher (`base` + `overlays/onprem`) | 김성모 |
 | `controllers/relocator/` | relocator (`base` + `overlays/onprem`) | 김성모 |
+| `data/job-watcher/` | (잡) 감시기: training의 JobSet · Workload · RelocationRequest → Kafka `job.lifecycle`. Pod 1개 · Recreate (`base` + `overlays/onprem`) | 김현수 (Data) |
 | `controllers/recovery-controller/` | 복구 컨트롤러 (`base` + `overlays/onprem`) | 한송이 |
 
 이미지는 GHCR에 있고, 이곳에는 이미지를 띄우는 매니페스트만 둔다.
 컨트롤러 이미지 digest는 K8s CI 봇이 `controllers/<이름>/overlays/onprem/kustomization.yaml`의 `images:`에 커밋한다 (ADR-23, K8s Variable `DEPLOY_IMAGES`에 든 것만).
+`data/<이름>/overlays/onprem`은 Data CI 봇이 같은 방식으로 갱신한다 (Data Variable `DEPLOY_IMAGES`).
 MultiKueue kubeconfig Secret(`kueue-system/eks-*-kubeconfig`)은 IaC가 등록하고 여기에는 이름만 둔다.

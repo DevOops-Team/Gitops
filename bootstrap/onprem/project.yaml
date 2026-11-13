@@ -4,7 +4,7 @@ metadata:
   name: gpu-platform
   namespace: argocd
 spec:
-  description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend · Kueue · JobSet · scheduling controllers)
+  description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend · data · Kueue · JobSet · scheduling controllers)
   sourceRepos:
   - https://github.com/DevOops-Team/Gitops.git
   - https://github.com/DevOops-Team/Monitoring.git   # 모니터링 수집 층 매니페스트 (Monitoring deploy/agents, 이태림)
@@ -24,6 +24,8 @@ spec:
     namespace: cert-manager
   - server: https://kubernetes.default.svc
     namespace: monitoring
+  - server: https://kubernetes.default.svc
+    namespace: data-system     # (잡) 감시기 job-watcher (GPU-145), 이후 수집기
   - server: https://kubernetes.default.svc
     namespace: metallb-system
   - server: https://kubernetes.default.svc
