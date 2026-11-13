@@ -8,6 +8,7 @@ data:
   # IaC prod/data: 체크포인트 버킷 하나에 code/ · datasets/ · jobs/ (ADR-14)
   S3_BUCKET: devoops-prod-ckpt-354363695096-us-east-2
   FENCING_TABLE: devoops-prod-fencing
-  # 온프레 Kafka 브로커 (ADR-7 · ADR-8). Backend가 job.submitted를 보내고, JobSet의 ckpt-sidecar에도 넘긴다
+  # 온프레 Kafka 브로커 (ADR-7 · ADR-8). Backend가 job.submitted를 보내고 토픽 전체를 읽어 화면 상태를 만든다 (GPU-146).
+  # JobSet의 ckpt-sidecar에도 넘긴다
   KAFKA_BOOTSTRAP: 172.30.0.40:9092,172.30.0.41:9092,172.30.0.42:9092
   KAFKA_TOPIC_LIFECYCLE: job.lifecycle
