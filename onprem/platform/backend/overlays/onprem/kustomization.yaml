@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
 - ../../base
 images:
-- digest: sha256:c4621ad16192ea2fb42f81f2e7745cafe650f46da04d1d28ebf11dbf21d3548a
+- digest: sha256:fcf806ddde41b8d8de927a0d7ca34f6f43d771be2aa3621d4a8d482836def020
   name: ghcr.io/devoops-team/backend
   newName: ghcr.io/devoops-team/backend
 - digest: sha256:0860e86833b23d60c6435ebc205209d338fa5e9a4baf37a3408c63f0a5ba9747
