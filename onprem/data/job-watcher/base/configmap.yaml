@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: job-watcher
+  namespace: data-system
+data:
+  WATCH_NAMESPACE: training
+  # 온프레 Kafka 브로커 (ADR-7 · ADR-8). Backend configmap과 같은 값
+  KAFKA_BOOTSTRAP: 172.30.0.40:9092,172.30.0.41:9092,172.30.0.42:9092
+  KAFKA_TOPIC_LIFECYCLE: job.lifecycle
+  # 관리 클러스터에 설치된 버전 (JobSet 0.13 · Kueue 0.20 · scheduling-common CRD)
+  JOBSET_API: jobset.x-k8s.io/v1alpha2
+  WORKLOAD_API: kueue.x-k8s.io/v1beta2
+  RELOCATION_API: scheduling.devoops.site/v1alpha1
+  EMIT_FIRST_SUBMITTED: "false"     # 첫 job.submitted는 Backend가 보냄

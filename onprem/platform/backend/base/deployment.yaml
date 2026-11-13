@@ -63,7 +63,7 @@ spec:
         - name: TRAINER_IMAGE
           value: ghcr.io/devoops-team/trainer
         envFrom:
-        # AWS_REGION · S3_BUCKET · FENCING_TABLE · PROGRESS_TABLE · KAFKA_BOOTSTRAP · KAFKA_TOPIC_LIFECYCLE
+        # AWS_REGION · S3_BUCKET · FENCING_TABLE · KAFKA_BOOTSTRAP · KAFKA_TOPIC_LIFECYCLE
         - configMapRef:
             name: backend-config
         # AWS 자격 증명 (Git에 넣지 않음, docs/secrets.md). 없으면 AWS 호출만 실패하고 서버는 뜬다.

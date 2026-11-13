@@ -1,0 +1,25 @@
+# training 네임스페이스 읽기만 (Data job-watcher/README.md 권한 표)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: job-watcher
+  namespace: training
+rules:
+- apiGroups: [jobset.x-k8s.io]
+  resources: [jobsets]
+  verbs: [get, list, watch]
+- apiGroups: [kueue.x-k8s.io]
+  resources: [workloads]
+  verbs: [get, list, watch]
+- apiGroups: [scheduling.devoops.site]
+  resources: [relocationrequests]
+  verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: job-watcher
+  namespace: training
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: job-watcher}
+subjects:
+- {kind: ServiceAccount, name: job-watcher, namespace: data-system}
