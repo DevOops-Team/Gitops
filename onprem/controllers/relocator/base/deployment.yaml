@@ -1,0 +1,96 @@
+# 레플리카 3개를 platform-worker 노드(worker1~3)에 하나씩. Lease로 리더 하나만 일하고 둘은 대기
+# AWS(펜싱 DynamoDB · 복구 원본 S3)는 Roles Anywhere 인증 sidecar로 붙는다 (GPU-173, K8s aws-signing-helper/README.md)
+#   개인 키는 aws-auth 컨테이너에만 마운트. relocator는 127.0.0.1:9911에서 1시간 임시 키만 받는다
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relocator
+  namespace: platform
+  labels: {app.kubernetes.io/name: relocator, app.kubernetes.io/part-of: scheduling}
+spec:
+  replicas: 3
+  strategy:                      # 노드 3대에 하나씩이라 하나 내리고 하나 올림 (maxSurge 0)
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 0, maxUnavailable: 1}
+  selector:
+    matchLabels: {app.kubernetes.io/name: relocator}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: relocator, app.kubernetes.io/part-of: scheduling}
+    spec:
+      serviceAccountName: relocator
+      nodeSelector: {platform-worker: 'true'}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app.kubernetes.io/name: relocator}}
+            topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true       # 두 이미지 모두 USER 65532
+        fsGroup: 65532           # 인증서 Secret 파일(0440)을 aws-auth가 읽게
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+      - name: aws-auth           # 네이티브 sidecar (k8s 1.29+): relocator보다 먼저 뜨고 끝까지 같이 산다
+        image: ghcr.io/devoops-team/aws-signing-helper   # digest는 overlays/onprem images:
+        restartPolicy: Always
+        args:
+        - serve
+        - --certificate=/var/run/devoops-aws/client.pem
+        - --private-key=/var/run/devoops-aws/client.key
+        - --trust-anchor-arn=$(TRUST_ANCHOR_ARN)
+        - --profile-arn=$(PROFILE_ARN)
+        - --role-arn=$(ROLE_ARN)
+        - --region=us-east-2
+        env:                     # ARN은 Secret relocator-aws에 (계정 ID를 공개 레포에 두지 않음, README.md)
+        - {name: TRUST_ANCHOR_ARN, valueFrom: {secretKeyRef: {name: relocator-aws, key: trust_anchor_arn}}}
+        - {name: PROFILE_ARN, valueFrom: {secretKeyRef: {name: relocator-aws, key: profile_arn}}}
+        - {name: ROLE_ARN, valueFrom: {secretKeyRef: {name: relocator-aws, key: role_arn}}}
+        startupProbe:            # 첫 자격 증명을 받아 9911을 연 뒤에 relocator가 시작한다 (실패하면 serve가 종료 → 재시작)
+          tcpSocket: {port: 9911}
+          periodSeconds: 2
+          failureThreshold: 30
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: aws-cert, mountPath: /var/run/devoops-aws, readOnly: true}
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {memory: 64Mi}
+      containers:
+      - name: main
+        image: ghcr.io/devoops-team/relocator   # digest는 overlays/onprem images: (봇이 갱신, ADR-23)
+        # command 없음: 이미지 CMD python relocator/relocator.py
+        env:
+        - name: POD_NAME         # Lease holderIdentity
+          valueFrom: {fieldRef: {fieldPath: metadata.name}}
+        - {name: RECOVERY_STORE, value: aws}                 # 복구 원본 S3 code/{job_id}/jobset.json · 펜싱 DynamoDB
+        - {name: FENCING_TABLE, value: devoops-prod-fencing}
+        - name: CKPT_BUCKET      # 버킷 이름에 계정 ID가 있어 Secret에
+          valueFrom: {secretKeyRef: {name: relocator-aws, key: ckpt_bucket}}
+        - {name: AWS_REGION, value: us-east-2}
+        - {name: AWS_EC2_METADATA_SERVICE_ENDPOINT, value: "http://127.0.0.1:9911/"}   # 끝의 / 필수
+        # 워커 API가 끊겼을 때 EC2 상태를 옛 실행 종료 증거로 쓴다 (ec2_evidence.py). IAM은 DescribeInstances까지 있다.
+        # 켜려면 describe와 함께 EC2_CLUSTERS · EC2_NODEGROUPS(실제 EKS · 노드그룹 이름)를 넣는다
+        - {name: EC2_EVIDENCE, value: "off"}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:            # kubernetes 클라이언트가 워커 kubeconfig의 CA · 인증서를 임시 파일로 씀
+        - {name: tmp, mountPath: /tmp}
+        resources:
+          requests: {cpu: 50m, memory: 96Mi}
+          limits: {memory: 256Mi}
+      volumes:
+      - name: tmp
+        emptyDir: {sizeLimit: 16Mi}
+      - name: aws-cert
+        secret:
+          secretName: relocator-aws
+          defaultMode: 0440
+          items:                 # 인증서 · 키만 파일로 (ARN · 버킷은 env)
+          - {key: client.pem, path: client.pem}
+          - {key: client.key, path: client.key}
