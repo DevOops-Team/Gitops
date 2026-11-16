@@ -96,6 +96,10 @@ spec:
         - name: S3_BUCKET
           valueFrom:
             secretKeyRef: {name: backend-aws-identity, key: s3_bucket}
+        # 데이터 DB backend_ro 비밀번호 (Git에 넣지 않음). PGHOST 등은 backend-config
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef: {name: backend-db, key: PGPASSWORD}
         # 브라우저는 Frontend nginx를 거쳐 같은 주소로 부르므로 CORS는 실제로 쓰이지 않는다. 외부 주소만 허용해 둔다.
         - name: ALLOWED_ORIGIN
           value: https://devoops.site
@@ -107,7 +111,7 @@ spec:
         - name: TRAINER_IMAGE
           value: ghcr.io/devoops-team/trainer
         envFrom:
-        # AWS_REGION · FENCING_TABLE · KAFKA_BOOTSTRAP · KAFKA_TOPIC_LIFECYCLE (S3_BUCKET은 위 env, Secret)
+        # AWS_REGION · FENCING_TABLE · KAFKA_BOOTSTRAP · KAFKA_TOPIC_LIFECYCLE · PGHOST 등 (S3_BUCKET · PGPASSWORD는 위 env, Secret)
         - configMapRef:
             name: backend-config
         resources:
