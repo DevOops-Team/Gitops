@@ -3,10 +3,10 @@ kind: Kustomization
 resources:
 - ../../base
 images:
-- digest: sha256:6cbbfa9a95d531683493c0f56387bc946231de65a5b3550285ad67c01f71cd98
+- digest: sha256:030b8adc5d04579439f48c9b0917c0076d69bc89d4ae7146ea9a01eed48dc008
   name: ghcr.io/devoops-team/backend
   newName: ghcr.io/devoops-team/backend
-  newTag: 1.0.0
+  newTag: 1.0.1
 - digest: sha256:2f68bbd01abda3af262e6b41dcc2c26cfcc6a4de7b1380e1a7fcf724c66ba5d7
   name: ghcr.io/devoops-team/checkpoint
   newName: ghcr.io/devoops-team/checkpoint
