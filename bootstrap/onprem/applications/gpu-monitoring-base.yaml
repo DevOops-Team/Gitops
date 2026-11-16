@@ -1,0 +1,30 @@
+# 모니터링 클러스터 저장 층: 자체 매니페스트(네임스페이스 · Mimir · Prometheus Agent · 밖으로 여는 Service · 룰 · 대시보드 ConfigMap)
+# Monitoring 레포 deploy/base(kustomize). Secret mimir-s3-cert 필요(Monitoring scripts/create-secrets.sh s3-certs). 담당: 이태림 (ADR-18 · ADR-21)
+# 수동 sync(automated 없음): 저장소라 처음엔 차이를 보고 누른다. automated로 바꾼 뒤에도 prune은 끈다(GPU-184)
+# 비상 경로: 관리 클러스터가 죽어 Argo CD를 못 쓰면 Monitoring 레포 scripts/deploy-k8s.sh. 차트 버전은 그쪽 deploy/versions.env와 같게 유지한다
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-monitoring-base
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '-5'
+spec:
+  project: gpu-monitoring
+  destination:
+    name: monitoring
+    namespace: monitoring
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Monitoring.git
+    targetRevision: main
+    path: deploy/base

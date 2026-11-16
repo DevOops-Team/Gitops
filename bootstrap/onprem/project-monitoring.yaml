@@ -1,0 +1,25 @@
+# 모니터링 클러스터(온프레 k8s 3노드, ADR-18) 저장 층 배포 범위. 온프레 Argo CD가 허브로 원격 배포한다.
+# 목적지는 Argo CD 클러스터 Secret 이름 monitoring (IaC ansible/playbooks/bootstrap/register-monitoring-cluster.yml, GPU-177).
+# 등록 토큰이 cluster-admin이라 배포 범위는 여기서 묶는다: 네임스페이스 2개 · 클러스터 범위 리소스 4종만. 담당: 이태림
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gpu-monitoring
+  namespace: argocd
+spec:
+  description: Monitoring cluster storage layer (Mimir · Loki · Tempo · Alertmanager · Grafana · exporters), deployed from the on-prem hub
+  sourceRepos:
+  - https://github.com/DevOops-Team/Monitoring.git          # 자체 매니페스트 deploy/base + 차트 values deploy/values
+  - https://prometheus-community.github.io/helm-charts      # node-exporter · kube-state-metrics · blackbox · alertmanager
+  - https://grafana-community.github.io/helm-charts         # loki · tempo · grafana
+  - https://charts.containeroo.ch                           # local-path-provisioner
+  destinations:
+  - name: monitoring
+    namespace: monitoring
+  - name: monitoring
+    namespace: local-path-storage
+  clusterResourceWhitelist:
+  - {group: '', kind: Namespace}
+  - {group: storage.k8s.io, kind: StorageClass}             # local-path
+  - {group: rbac.authorization.k8s.io, kind: ClusterRole}   # Prometheus Agent · kube-state-metrics · grafana · local-path
+  - {group: rbac.authorization.k8s.io, kind: ClusterRoleBinding}
