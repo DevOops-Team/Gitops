@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+images:
+# aws-signing-helper는 사람이 올린다 (helper 버전은 배포 쪽에서 관리, K8s aws-signing-helper/README.md)
+- digest: sha256:527d6ffc3a8c1fde7de34273890f3cc16b83f23f8e5e881485b479c696352203
+  name: ghcr.io/devoops-team/aws-signing-helper
+  newName: ghcr.io/devoops-team/aws-signing-helper
+  newTag: 1.1.0
+- digest: sha256:7af5ea2f426b6f7acc95380749f38a0c41b06f62806595aff89536fda10a3e24
+  name: ghcr.io/devoops-team/recovery-controller
+  newName: ghcr.io/devoops-team/recovery-controller
+  newTag: 1.1.0

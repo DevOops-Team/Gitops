@@ -1,0 +1,5 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 복구 컨트롤러 (로직 K8s recovery-controller, 한송이). 지금은 replicas 0 (켜는 조건 ../README.md)
+resources:
+- resources.yaml
