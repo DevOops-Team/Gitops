@@ -9,12 +9,15 @@
 #       image: ghcr.io/devoops-team/frontend
 #       digest: ${{ needs.image.outputs.digest }}
 #       overlay: ${{ vars.GITOPS_OVERLAY }}
+#       version: ${{ needs.plan.outputs.version }}      # 선택. 있으면 newTag로 같이 기록 (GPU-136)
 #       app-id: ${{ vars.DEPLOY_APP_ID }}
 #       gitops-repo: ${{ vars.GITOPS_REPO }}
-#     secrets:
-#       app-private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
 #
 # 봇(GitHub App)만 Gitops main ruleset 우회 대상이다. 바꾸는 것은 overlay의 images 항목 하나뿐이다.
+#
+# 봇 비밀키는 호출 레포 Environment `gitops-deploy`(배포 브랜치 main만)의 Secret DEPLOY_APP_PRIVATE_KEY에만 둔다.
+#   main이 아닌 브랜치 · PR에서 이 job을 부르면 Environment 규칙에 막혀 키를 받지 못한다 (GPU-136).
+#   호출 레포에 Environment가 없으면 GitHub이 보호 규칙 없이 자동으로 만들므로, 반드시 먼저 만들어 둘 것.
 name: update-image
 
 on:
@@ -28,6 +31,10 @@ on:
         description: 빌드 출력 digest (sha256:...)
         type: string
         required: true
+      version:
+        description: 이미지 버전 (예 1.2.0). 있으면 overlay에 newTag로 기록 — 실제 배포는 여전히 digest 기준
+        type: string
+        default: ""
       overlay:
         description: Gitops 안 kustomization 디렉터리. 예 onprem/platform/frontend/overlays/onprem
         type: string
@@ -46,8 +53,8 @@ on:
         default: main
     secrets:
       app-private-key:
-        description: GitHub App 비밀키 (DEPLOY_APP_PRIVATE_KEY)
-        required: true
+        description: 더 이상 쓰지 않음 (Environment gitops-deploy의 Secret을 씀). 호출 레포 전환이 끝나면 삭제
+        required: false
 
 permissions:
   contents: read
@@ -56,13 +63,16 @@ jobs:
   update:
     name: update image digest
     runs-on: ubuntu-24.04
+    environment: gitops-deploy
     env:
       IMAGE: ${{ inputs.image }}
       DIGEST: ${{ inputs.digest }}
+      VERSION: ${{ inputs.version }}
       OVERLAY: ${{ inputs.overlay }}
       GITOPS_REPO: ${{ inputs.gitops-repo }}
       BRANCH: ${{ inputs.branch }}
       KUSTOMIZE_VERSION: v5.4.3
+      KUSTOMIZE_SHA256: 3669470b454d865c8184d6bce78df05e977c9aea31c30df3c669317d43bcc7a7   # linux_amd64, checksums.txt
     steps:
       - name: Check inputs
         run: |
@@ -70,18 +80,21 @@ jobs:
           [[ "$IMAGE" != *@* && "$IMAGE" != *:* ]] || { echo "::error::image에는 태그 · digest를 붙이지 않음: '$IMAGE'"; exit 1; }
           [[ "$OVERLAY" != /* && "$OVERLAY" != *..* ]] || { echo "::error::overlay는 레포 안 상대 경로: '$OVERLAY'"; exit 1; }
           [[ "$GITOPS_REPO" == */* ]] || { echo "::error::gitops-repo는 owner/name: '$GITOPS_REPO'"; exit 1; }
+          [[ -z "$VERSION" || "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version은 X.Y.Z: '$VERSION'"; exit 1; }
           echo "owner=${GITOPS_REPO%%/*}" >> "$GITHUB_ENV"
           echo "name=${GITOPS_REPO#*/}" >> "$GITHUB_ENV"
 
+      # 액션은 커밋 SHA로 고정 (봇 토큰을 다루므로)
       - id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf   # v2.2.1
         with:
           app-id: ${{ inputs.app-id }}
-          private-key: ${{ secrets.app-private-key }}
+          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}   # Environment gitops-deploy Secret
           owner: ${{ env.owner }}
           repositories: ${{ env.name }}
+          permission-contents: write                           # 토큰도 contents만
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
         with:
           repository: ${{ inputs.gitops-repo }}
           ref: ${{ inputs.branch }}
@@ -91,8 +104,10 @@ jobs:
       - name: Install kustomize
         run: |
           mkdir -p "$RUNNER_TEMP/bin"
-          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
-            | tar xz -C "$RUNNER_TEMP/bin" kustomize
+          tgz="$RUNNER_TEMP/kustomize.tar.gz"
+          curl -fsSL -o "$tgz" "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          echo "${KUSTOMIZE_SHA256}  $tgz" | sha256sum -c -
+          tar xzf "$tgz" -C "$RUNNER_TEMP/bin" kustomize
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
       - name: Update digest and push
@@ -102,18 +117,20 @@ jobs:
         run: |
           test -f "$OVERLAY/kustomization.yaml" || { echo "::error::$OVERLAY/kustomization.yaml 없음"; exit 1; }
           short_sha="${GITHUB_SHA::7}"
+          ref="${IMAGE}${VERSION:+:$VERSION}@${DIGEST}"   # 버전이 있으면 newTag + digest
+          label="${VERSION:-sha-${short_sha}}"
           git config user.name "$BOT_NAME"
           git config user.email "${BOT_NAME}@users.noreply.github.com"
           for attempt in 1 2 3; do
-            (cd "$OVERLAY" && kustomize edit set image "${IMAGE}=${IMAGE}@${DIGEST}")
+            (cd "$OVERLAY" && kustomize edit set image "${IMAGE}=${ref}")
             # overlay의 kustomization.yaml 외 다른 파일이 바뀌면 중단
             changed=$(git diff --name-only)
             if [ -z "$changed" ]; then echo "이미 ${DIGEST} — 변경 없음"; exit 0; fi
             [ "$changed" = "$OVERLAY/kustomization.yaml" ] || { echo "::error::예상 밖 변경: $changed"; exit 1; }
             kustomize build "$OVERLAY" > /dev/null
-            git commit -am "deploy(${IMAGE##*/}): sha-${short_sha}" \
-              -m "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" -m "image: ${IMAGE}@${DIGEST}"
-            git push origin "HEAD:${BRANCH}" && { echo "### ${IMAGE##*/} → \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+            git commit -am "deploy(${IMAGE##*/}): ${label}" \
+              -m "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" -m "image: ${ref}"
+            git push origin "HEAD:${BRANCH}" && { echo "### ${IMAGE##*/} ${VERSION} → \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
             echo "push 실패 — ${BRANCH} 다시 받아 재시도 (${attempt}/3)"
             git fetch origin "$BRANCH" && git reset --hard "origin/${BRANCH}"
           done

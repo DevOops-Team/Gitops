@@ -28,3 +28,11 @@ jobs:
 
       - name: Build and validate manifests
         run: tools/validate.sh
+
+  release-tools:
+    name: release tools · test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+      - name: unittest
+        run: python3 -m unittest discover -s tools/release -v   # GPU-136 버전 계산
