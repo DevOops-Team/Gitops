@@ -46,10 +46,8 @@ spec:
         - {name: TRUST_ANCHOR_ARN, valueFrom: {secretKeyRef: {name: relocator-aws, key: trust_anchor_arn}}}
         - {name: PROFILE_ARN, valueFrom: {secretKeyRef: {name: relocator-aws, key: profile_arn}}}
         - {name: ROLE_ARN, valueFrom: {secretKeyRef: {name: relocator-aws, key: role_arn}}}
-        startupProbe:            # 첫 자격 증명을 받아 9911을 연 뒤에 relocator가 시작한다 (실패하면 serve가 종료 → 재시작)
-          tcpSocket: {port: 9911}
-          periodSeconds: 2
-          failureThreshold: 30
+        # startupProbe 없음: serve는 127.0.0.1에서만 열어(다른 Pod가 키를 못 받게) kubelet 탐침이 닿지 않는다.
+        # 첫 자격 증명을 못 받으면 serve가 종료 → 재시작. 앱이 9911을 기다린다 (main의 command)
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -62,7 +60,22 @@ spec:
       containers:
       - name: main
         image: ghcr.io/devoops-team/relocator   # digest는 overlays/onprem images: (봇이 갱신, ADR-23)
-        # command 없음: 이미지 CMD python relocator/relocator.py
+        # sidecar가 첫 자격 증명을 받아 9911을 열 때까지 기다린 뒤 이미지 CMD(python relocator/relocator.py)를 실행한다.
+        # boto3 클라이언트가 시작 때 자격 증명을 한 번 정하므로, 먼저 뜨면 키 없는 클라이언트로 남는다
+        command:
+        - python
+        - -c
+        - |
+          import os, socket, sys, time
+          for _ in range(120):
+              try:
+                  socket.create_connection(("127.0.0.1", 9911), 1).close()
+                  break
+              except OSError:
+                  time.sleep(1)
+          else:
+              sys.exit("aws-auth sidecar가 120초 안에 9911을 열지 않음 (kubectl logs -c aws-auth)")
+          os.execvp("python", ["python", "relocator/relocator.py"])
         env:
         - name: POD_NAME         # Lease holderIdentity
           valueFrom: {fieldRef: {fieldPath: metadata.name}}

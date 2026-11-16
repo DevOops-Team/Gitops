@@ -117,10 +117,7 @@ spec:
         - {name: TRUST_ANCHOR_ARN, valueFrom: {secretKeyRef: {name: recovery-controller-aws, key: trust_anchor_arn}}}
         - {name: PROFILE_ARN, valueFrom: {secretKeyRef: {name: recovery-controller-aws, key: profile_arn}}}
         - {name: ROLE_ARN, valueFrom: {secretKeyRef: {name: recovery-controller-aws, key: role_arn}}}
-        startupProbe:
-          tcpSocket: {port: 9911}
-          periodSeconds: 2
-          failureThreshold: 30
+        # startupProbe 없음: serve는 127.0.0.1에서만 열어 kubelet 탐침이 닿지 않는다. 앱이 9911을 기다린다 (controller의 command)
         securityContext:
           runAsUser: 65532       # helper 이미지 사용자 (Pod 기본 10001과 다름)
           allowPrivilegeEscalation: false
@@ -134,6 +131,21 @@ spec:
       containers:
       - name: controller
         image: ghcr.io/devoops-team/recovery-controller   # digest는 overlays/onprem images: (봇이 갱신, ADR-23)
+        # sidecar가 9911을 열 때까지 기다린 뒤 이미지 ENTRYPOINT(python -u /app/main.py)를 실행한다
+        command:
+        - python
+        - -c
+        - |
+          import os, socket, sys, time
+          for _ in range(120):
+              try:
+                  socket.create_connection(("127.0.0.1", 9911), 1).close()
+                  break
+              except OSError:
+                  time.sleep(1)
+          else:
+              sys.exit("aws-auth sidecar가 120초 안에 9911을 열지 않음 (kubectl logs -c aws-auth)")
+          os.execvp("python", ["python", "-u", "/app/main.py"])
         ports:
         - {name: health, containerPort: 8080}
         env:
