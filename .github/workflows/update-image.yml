@@ -12,11 +12,14 @@
 #       version: ${{ needs.plan.outputs.version }}      # 선택. 있으면 newTag로 같이 기록 (GPU-136)
 #       app-id: ${{ vars.DEPLOY_APP_ID }}
 #       gitops-repo: ${{ vars.GITOPS_REPO }}
+#     secrets:
+#       DEPLOY_APP_PRIVATE_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}   # 이름으로 꼭 넘겨야 함 (값은 Environment 것이 쓰임)
 #
 # 봇(GitHub App)만 Gitops main ruleset 우회 대상이다. 바꾸는 것은 overlay의 images 항목 하나뿐이다.
 #
 # 봇 비밀키는 호출 레포 Environment `gitops-deploy`(배포 브랜치 main만)의 Secret DEPLOY_APP_PRIVATE_KEY에만 둔다.
 #   main이 아닌 브랜치 · PR에서 이 job을 부르면 Environment 규칙에 막혀 키를 받지 못한다 (GPU-136).
+#   재사용 워크플로는 호출 쪽이 secrets:로 이름을 넘겨야 Environment Secret 값을 받는다. 안 넘기면 조용히 빈 값이 된다.
 #   호출 레포에 Environment가 없으면 GitHub이 보호 규칙 없이 자동으로 만들므로, 반드시 먼저 만들어 둘 것.
 name: update-image
 
@@ -52,8 +55,11 @@ on:
         type: string
         default: main
     secrets:
+      DEPLOY_APP_PRIVATE_KEY:
+        description: 배포 봇 비밀키. 호출 쪽은 이름으로 넘기고, 실제 값은 Environment gitops-deploy의 같은 이름 Secret
+        required: false   # 전환 중 옛 호출(app-private-key)을 위해 false. 전환이 끝나면 true
       app-private-key:
-        description: 더 이상 쓰지 않음 (Environment gitops-deploy의 Secret을 씀). 호출 레포 전환이 끝나면 삭제
+        description: 옛 이름 (조직 Secret). 호출 레포 전환 · 조직 Secret 삭제가 끝나면 이 입력과 아래 fallback을 지운다
         required: false
 
 permissions:
@@ -84,12 +90,18 @@ jobs:
           echo "owner=${GITOPS_REPO%%/*}" >> "$GITHUB_ENV"
           echo "name=${GITOPS_REPO#*/}" >> "$GITHUB_ENV"
 
+      - name: Check bot key
+        env:
+          HAS_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY != '' || secrets.app-private-key != '' }}
+        run: |
+          [ "$HAS_KEY" = true ] || { echo "::error::배포 봇 키가 비어 있음 — 호출 쪽 secrets: DEPLOY_APP_PRIVATE_KEY 전달 · Environment gitops-deploy Secret 확인"; exit 1; }
+
       # 액션은 커밋 SHA로 고정 (봇 토큰을 다루므로)
       - id: app-token
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf   # v2.2.1
         with:
           app-id: ${{ inputs.app-id }}
-          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}   # Environment gitops-deploy Secret
+          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY || secrets.app-private-key }}   # Environment gitops-deploy Secret (전환 중 옛 이름 fallback)
           owner: ${{ env.owner }}
           repositories: ${{ env.name }}
           permission-contents: write                           # 토큰도 contents만

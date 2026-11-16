@@ -43,6 +43,7 @@ main 머지 (push)    version / release notes          머지 커밋의 PR 본�
 | 설치 레포 | Gitops만 | Backend · Frontend · K8s · Data만 |
 | 토큰 | Gitops 한 레포, `permission-contents: write` | 호출 레포 한 곳, `permission-contents: write` |
 | 비밀키 위치 | 각 코드 레포 Environment `gitops-deploy` Secret `DEPLOY_APP_PRIVATE_KEY` | 각 코드 레포 Environment `release` Secret `VERSION_APP_PRIVATE_KEY` |
+| 호출 쪽 | `secrets: DEPLOY_APP_PRIVATE_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}` | `secrets: VERSION_APP_PRIVATE_KEY: ${{ secrets.VERSION_APP_PRIVATE_KEY }}` |
 | Environment 배포 브랜치 | main만 | main만 |
 | ruleset 우회 | Gitops main: PR 필수 · 상태 검사만 (삭제 · force-push는 우회 없음) | 코드 레포 태그 `v*`: 생성만 (수정 · 삭제는 아무도 못 함) |
 | App ID | Variable `DEPLOY_APP_ID` | Variable `VERSION_APP_ID` |
