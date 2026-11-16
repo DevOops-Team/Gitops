@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# 수집기 collector (로직 Data collector, 김현수). 배포 GPU-178.
+# Kafka 토픽 5개 → PostgreSQL gpuf_data의 data 스키마 (데이터 파트 설계, 데이터 DB 스키마)
+# 미리 필요한 것: Secret data-system/collector-db, DB pg_hba에 워커 노드 IP 허용 (../README.md)
+resources:
+- serviceaccount.yaml
+- configmap.yaml
+- deployment.yaml

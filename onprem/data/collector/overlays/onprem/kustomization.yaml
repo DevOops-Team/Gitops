@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+images:
+- digest: sha256:895623973f9302ecd839d395e7babacac2f9d6688b7a701775ea7980e31be537
+  name: ghcr.io/devoops-team/collector
+  newName: ghcr.io/devoops-team/collector
+  newTag: 1.0.0

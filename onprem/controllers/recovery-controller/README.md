@@ -11,7 +11,7 @@ health만 열고 리더 선출도 하지 않는다. 인증 sidecar(`recovery` �
 |---|---|---|
 | recovery_table (DynamoDB inbox · 진행 기록) | IaC에 없음 | GPU-113 (한송이) |
 | IAM: recovery_table GetItem · PutItem · UpdateItem · Scan | 지금은 펜싱 테이블 GetItem · UpdateItem만 | IaC `live/base/onprem-roles.tf` |
-| Kafka 브로커 주소 · 인증 → Secret `platform/recovery-controller-credentials` (`KAFKA_CLIENT_CONFIG_JSON`) | 미정 | 데이터 파트 |
+| Kafka 브로커 | 있음: `172.30.0.40~42:9092` 3대, PLAINTEXT라 인증 Secret(`recovery-controller-credentials`) 불필요 (11/10 구성) | 데이터 파트 |
 | Secret `platform/recovery-controller-aws` (인증서 · ARN, relocator와 같은 형식) | 있음 (11/16) | `bootstrap/certs.sh recovery` |
 | relocator 배포 | 동작 중 (11/16) | `../relocator` |
 
