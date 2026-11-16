@@ -7,7 +7,15 @@ data:
   AWS_REGION: us-east-2
   # S3_BUCKET(체크포인트 버킷, ADR-14)은 계정 ID가 들어 있어 Secret backend-aws-identity에 둔다 (GPU-185)
   FENCING_TABLE: devoops-prod-fencing
-  # 온프레 Kafka 브로커 (ADR-7 · ADR-8). Backend가 job.submitted를 보내고 토픽 전체를 읽어 화면 상태를 만든다 (GPU-146).
+  # 온프레 Kafka 브로커 (ADR-7 · ADR-8). Backend가 job.submitted를 보낸다 (collector가 데이터 DB에 적재).
   # JobSet의 ckpt-sidecar에도 넘긴다
   KAFKA_BOOTSTRAP: 172.30.0.40:9092,172.30.0.41:9092,172.30.0.42:9092
   KAFKA_TOPIC_LIFECYCLE: job.lifecycle
+  # 데이터 DB (db VM, Data db/004 backend_ro): 화면 상태 · 진행률 · 타임라인을 읽는다 (GPU-185).
+  # 비밀번호는 Secret backend-db. DB pg_hba는 워커 노드 IP 172.30.0.21~23에서 backend_ro 허용 (Pod 트래픽이 노드 IP로 나감)
+  PGHOST: 172.30.0.50
+  PGPORT: "5432"
+  PGDATABASE: gpuf_data
+  PGUSER: backend_ro
+  PGSSLMODE: prefer
+  PGCONNECT_TIMEOUT: "5"
