@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collector
+  namespace: data-system
+data:
+  # 온프레 Kafka 3대 (KRaft, PLAINTEXT). job-watcher · Backend와 같은 값
+  KAFKA_BOOTSTRAP: 172.30.0.40:9092,172.30.0.41:9092,172.30.0.42:9092
+  KAFKA_GROUP: data-collector
+  KAFKA_TOPICS: gpu.fault,recovery.action,job.lifecycle,fault.injection,monitoring.log
+  # 데이터 DB (db VM). 비밀번호는 Secret collector-db (README.md)
+  PGHOST: 172.30.0.50
+  PGPORT: "5432"
+  PGDATABASE: gpuf_data
+  PGUSER: data_collector
+  PGSSLMODE: prefer
+  PGCONNECT_TIMEOUT: "10"
