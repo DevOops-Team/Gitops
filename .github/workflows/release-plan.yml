@@ -1,0 +1,122 @@
+# 재사용 워크플로: develop → main PR 본문의 '## 릴리스 노트'로 다음 버전을 계산한다 (GPU-136).
+#   로직은 tools/release/release.py (형식 · 버전 규칙은 그 파일 머리말).
+#
+#   pull_request (→ main) : 형식 검사 + 다음 버전 미리보기 (job summary). 형식이 틀리면 실패 → main 필수 검사
+#   push (main)           : 머지 커밋의 PR 본문으로 버전 계산 → outputs (release=true)
+#   그 밖 (→ develop 등)   : 아무것도 안 함 (release=false)
+#
+# 호출 예:
+#   release-notes:     # 별도 워크플로, on.pull_request types [opened, edited, synchronize, reopened] branches [main]
+#     uses: DevOops-Team/Gitops/.github/workflows/release-plan.yml@main
+#     permissions: { contents: read, pull-requests: read }
+#
+# 버전 봇 · 비밀키가 필요 없다 (GITHUB_TOKEN 읽기만). 태그 · Release는 release-publish.yml.
+name: release-plan
+
+on:
+  workflow_call:
+    inputs:
+      tools-ref:
+        description: tools/release를 가져올 Gitops ref (검증용으로만 바꿈)
+        type: string
+        default: main
+    outputs:
+      release:
+        description: "'true'면 main 머지 릴리스 — version · tag · description · notes가 채워짐"
+        value: ${{ jobs.plan.outputs.release }}
+      version:
+        value: ${{ jobs.plan.outputs.version }}
+      tag:
+        value: ${{ jobs.plan.outputs.tag }}
+      description:
+        value: ${{ jobs.plan.outputs.description }}
+      notes:
+        value: ${{ jobs.plan.outputs.notes }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: release notes
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read        # main push에서 머지 커밋의 PR 본문 조회
+    outputs:
+      release: ${{ steps.plan.outputs.release }}
+      version: ${{ steps.plan.outputs.version }}
+      tag: ${{ steps.plan.outputs.tag }}
+      description: ${{ steps.plan.outputs.description }}
+      notes: ${{ steps.plan.outputs.notes }}
+    env:
+      EVENT: ${{ github.event_name }}
+      BASE_REF: ${{ github.base_ref }}
+      PR_BODY: ${{ github.event.pull_request.body }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - id: mode
+        run: |
+          if [ "$EVENT" = pull_request ] && [ "$BASE_REF" = main ]; then mode=check
+          elif [ "$EVENT" = push ] && [ "$GITHUB_REF" = refs/heads/main ]; then mode=release
+          else mode=skip; fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "mode: $mode"
+
+      - if: steps.mode.outputs.mode != 'skip'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+        with:
+          fetch-depth: 0             # 태그 vX.Y.Z 전부
+          path: repo
+      - if: steps.mode.outputs.mode != 'skip'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
+        with:
+          repository: DevOops-Team/Gitops
+          ref: ${{ inputs.tools-ref }}
+          path: release-tools
+          sparse-checkout: tools/release
+
+      - name: PR 본문
+        if: steps.mode.outputs.mode != 'skip'
+        id: pr
+        run: |
+          if [ "${{ steps.mode.outputs.mode }}" = check ]; then
+            printf '%s' "$PR_BODY" > body.md
+            echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # main push: 이 머지 커밋을 만든 PR (merge commit 방식 → merge_commit_sha == GITHUB_SHA)
+          pr=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/pulls" \
+                 --jq "map(select(.merged_at != null and .merge_commit_sha == \"${GITHUB_SHA}\" and .base.ref == \"main\")) | first // empty")
+          if [ -z "$pr" ]; then
+            echo "::notice::${GITHUB_SHA::7}은 main PR 머지 커밋이 아님 — 릴리스 안 함"
+            echo "none=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          jq -r '.body // ""' <<<"$pr" > body.md
+          echo "number=$(jq -r .number <<<"$pr")" >> "$GITHUB_OUTPUT"
+
+      - name: 버전 계산
+        id: plan
+        run: |
+          if [ "${{ steps.mode.outputs.mode }}" = skip ] || [ "${{ steps.pr.outputs.none }}" = true ]; then
+            echo "release=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          python3 release-tools/tools/release/release.py plan \
+            --body-file body.md --repo-dir repo --pr "${{ steps.pr.outputs.number }}" > plan.json
+          {
+            echo "release=$([ "${{ steps.mode.outputs.mode }}" = release ] && echo true || echo false)"
+            echo "version=$(jq -r .version plan.json)"
+            echo "tag=$(jq -r .tag plan.json)"
+            echo "description=$(jq -r .description plan.json)"
+            d="EOF_$(openssl rand -hex 8)"
+            echo "notes<<$d"; jq -r .notes plan.json; echo "$d"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### 다음 버전: \`$(jq -r .tag plan.json)\` ($(jq -r .bump plan.json), 이전 $(jq -r '.previous // "없음"' plan.json))"
+            echo
+            echo "**이미지 description**: $(jq -r .description plan.json)"
+            echo
+            jq -r .notes plan.json
+          } >> "$GITHUB_STEP_SUMMARY"
