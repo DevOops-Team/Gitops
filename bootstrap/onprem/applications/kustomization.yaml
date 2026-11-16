@@ -25,3 +25,13 @@ resources:
 - gpu-collector.yaml          # 수집기 Kafka → 데이터 DB, data-system (GPU-178). Secret collector-db 필요
 - gpu-eks-scheduling.yaml     # ApplicationSet: EKS 워커마다 Application (GPU-133)
 - gpu-monitoring-agents.yaml
+# 모니터링 클러스터 저장 층 (원격 클러스터 monitoring, project gpu-monitoring, 수동 sync — GPU-184)
+- gpu-monitoring-local-path.yaml
+- gpu-monitoring-base.yaml
+- gpu-monitoring-node-exporter.yaml
+- gpu-monitoring-kube-state-metrics.yaml
+- gpu-monitoring-loki.yaml
+- gpu-monitoring-tempo.yaml
+- gpu-monitoring-blackbox.yaml
+- gpu-monitoring-alertmanager.yaml
+- gpu-monitoring-grafana.yaml

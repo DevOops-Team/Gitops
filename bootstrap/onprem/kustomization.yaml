@@ -3,5 +3,6 @@ kind: Kustomization
 resources:
 - project.yaml
 - project-eks.yaml
+- project-monitoring.yaml
 - repositories.yaml
 - root.yaml
