@@ -1,0 +1,73 @@
+# 재사용 워크플로: 버전 봇(GitHub App)이 호출 레포에 태그 vX.Y.Z와 GitHub Release를 만든다 (GPU-136).
+#   release-plan.yml 출력(tag · notes)을 받아 main 머지 커밋(GITHUB_SHA)에 붙인다. 이미지 push가 끝난 뒤 부른다.
+#
+# 호출 예:
+#   release:
+#     needs: [plan, image]
+#     if: needs.plan.outputs.release == 'true'
+#     uses: DevOops-Team/Gitops/.github/workflows/release-publish.yml@main
+#     with:
+#       tag: ${{ needs.plan.outputs.tag }}
+#       notes: ${{ needs.plan.outputs.notes }}
+#       app-id: ${{ vars.VERSION_APP_ID }}
+#
+# 버전 봇 권한: 코드 레포(Backend · Frontend · K8s · Data)의 contents:write 하나 (태그 · Release).
+#   비밀키는 호출 레포 Environment `release`(배포 브랜치 main만)의 Secret VERSION_APP_PRIVATE_KEY에만 둔다.
+#   태그 ruleset `v*`는 이 봇만 만들 수 있고, 아무도 수정 · 삭제할 수 없다.
+#   배포 봇(update-image.yml, Gitops만)과 키 · 권한을 섞지 않는다.
+# 재실행해도 안전하다: Release가 이미 있으면 건너뛴다.
+name: release-publish
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: vX.Y.Z
+        type: string
+        required: true
+      notes:
+        description: Release 본문 (markdown)
+        type: string
+        required: true
+      app-id:
+        description: 버전 봇 App ID (호출 레포 Variable VERSION_APP_ID)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: tag · release
+    runs-on: ubuntu-24.04
+    environment: release
+    env:
+      TAG: ${{ inputs.tag }}
+      NOTES: ${{ inputs.notes }}
+    steps:
+      - name: Check inputs
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::tag 형식이 아님: '$TAG'"; exit 1; }
+          [ "$GITHUB_REF" = refs/heads/main ] || { echo "::error::main에서만 릴리스: $GITHUB_REF"; exit 1; }
+
+      - id: app-token
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf   # v2.2.1
+        with:
+          app-id: ${{ inputs.app-id }}
+          private-key: ${{ secrets.VERSION_APP_PRIVATE_KEY }}   # Environment release Secret
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+
+      - name: Create tag and release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::$TAG Release가 이미 있음 — 건너뜀"; exit 0
+          fi
+          printf '%s\n' "$NOTES" > notes.md
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "$TAG" --notes-file notes.md --latest
+          echo "### Release $TAG → ${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
