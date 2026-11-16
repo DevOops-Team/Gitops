@@ -1,0 +1,49 @@
+# Pod 1개 (GPU-178). 멈춰도 사건은 Kafka에 7일 남고, 다시 뜨면 마지막 커밋 위치부터 이어서 저장한다
+# (DB 커밋 뒤 오프셋 커밋 + event_id 중복 제거). 여러 대는 파생 갱신(experiments · job_runs)의 동시성이 보장되지 않아 두지 않는다.
+# 배포 때도 Recreate: 두 Pod가 겹쳐 컨슈머 그룹 리밸런스가 일어나지 않게.
+# HTTP 포트가 없어 probe는 없다. 상태는 로그와 컨슈머 그룹 LAG(모니터링 kafka_exporter)로 본다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collector
+  namespace: data-system
+  labels: {app.kubernetes.io/name: collector, app.kubernetes.io/part-of: data}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app.kubernetes.io/name: collector}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: collector, app.kubernetes.io/part-of: data}
+    spec:
+      serviceAccountName: collector
+      nodeSelector: {platform-worker: 'true'}
+      terminationGracePeriodSeconds: 30   # SIGTERM → 진행 중 묶음 저장 · 커밋
+      securityContext:
+        runAsNonRoot: true                # 이미지 USER 1000
+        runAsUser: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: main
+        image: ghcr.io/devoops-team/collector   # digest는 overlays/onprem images: (Data CI 봇이 갱신, ADR-23)
+        # command 없음: 이미지 CMD python -m collector.main
+        envFrom:
+        - configMapRef: {name: collector}
+        env:
+        - name: PGPASSWORD
+          valueFrom: {secretKeyRef: {name: collector-db, key: PGPASSWORD}}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: tmp, mountPath: /tmp}
+        resources:
+          requests: {cpu: 20m, memory: 96Mi}
+          limits: {memory: 512Mi}         # BATCH_SIZE 500 묶음
+      volumes:
+      - name: tmp
+        emptyDir: {sizeLimit: 16Mi}
