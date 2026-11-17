@@ -1,6 +1,6 @@
 # 모니터링 클러스터 저장 층: node-exporter(모니터링 클러스터 노드 지표)
 # 차트 prometheus-community/prometheus-node-exporter + Monitoring deploy/values/node-exporter.yaml. 담당: 이태림 (ADR-18 · ADR-21)
-# 수동 sync(automated 없음): 저장소라 처음엔 차이를 보고 누른다. automated로 바꾼 뒤에도 prune은 끈다(GPU-184)
+# 자동 sync: Monitoring main이나 이 파일이 바뀌면 반영한다. prune · selfHeal은 끈다(저장소 리소스를 자동으로 지우지 않고, 비상 때 deploy-k8s.sh로 넣은 변경을 되돌리지 않게) (GPU-184)
 # 비상 경로: 관리 클러스터가 죽어 Argo CD를 못 쓰면 Monitoring 레포 scripts/deploy-k8s.sh. 차트 버전은 그쪽 deploy/versions.env와 같게 유지한다
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -15,6 +15,9 @@ spec:
     name: monitoring
     namespace: monitoring
   syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
     syncOptions:
     - CreateNamespace=false
     - FailOnSharedResource=true
