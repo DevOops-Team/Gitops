@@ -1,6 +1,7 @@
 # EKS 워커마다 Application 하나 (gpu-eks-scheduling-<클러스터>). Argo CD 클러스터 Secret에
 # 라벨 devoops.site/gpu-worker: "true"가 있는 클러스터만 대상: IaC가 EKS를 만들 때 Secret을 등록하면
 # 생기고, 지우면 없어진다(GPU-126). 고정 Application 3개를 두면 없는 클러스터 쪽이 계속 오류가 난다.
+# CLUSTER_NAME · 워커 GPU 쿼터도 이 Secret(이름 · 라벨)에서 받는다 (GPU-199). eks/scheduling/overlays는 없앴다.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -63,9 +64,29 @@ spec:
           namespace: kube-system      # GPU 노드에서 nvidia.com/gpu를 노출 (GPU-142, 예전 수동 helm install)
           valueFiles:
           - $values/eks/scheduling/base/nvidia-device-plugin-values.yaml
+      # 클러스터별 값은 Git에 두지 않고 IaC가 클러스터 Secret 라벨로 넣는다 (GPU-199):
+      #   devoops.site/train-gpus · spare-gpus = IaC config eks.topologies의 training · spare (노드 1 = GPU 1)
+      # 라벨이 없으면 fail이 생성 오류를 내고 그 클러스터 Application은 바뀌지 않는다.
       - repoURL: https://github.com/DevOops-Team/Gitops.git
         targetRevision: main
-        path: 'eks/scheduling/overlays/{{.name}}'
+        path: eks/scheduling/base
+        kustomize:
+          patches:
+          - target: {kind: ConfigMap, name: devoops-cluster-info}
+            patch: |-
+              - op: replace
+                path: /data/CLUSTER_NAME
+                value: '{{.name}}'
+          - target: {kind: ClusterQueue, name: train-cq}
+            patch: |-
+              - op: replace
+                path: /spec/resourceGroups/0/flavors/0/resources/0/nominalQuota
+                value: '{{ $v := index .metadata.labels "devoops.site/train-gpus" }}{{ if not $v }}{{ fail "cluster Secret label devoops.site/train-gpus is missing" }}{{ end }}{{ $v }}'
+          - target: {kind: ClusterQueue, name: recovery-cq}
+            patch: |-
+              - op: replace
+                path: /spec/resourceGroups/0/flavors/0/resources/0/nominalQuota
+                value: '{{ $v := index .metadata.labels "devoops.site/spare-gpus" }}{{ if not $v }}{{ fail "cluster Secret label devoops.site/spare-gpus is missing" }}{{ end }}{{ $v }}'
       - repoURL: https://github.com/DevOops-Team/Gitops.git
         targetRevision: main
         ref: values
