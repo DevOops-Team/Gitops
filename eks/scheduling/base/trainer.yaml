@@ -15,4 +15,4 @@ metadata:
   name: devoops-cluster-info
   namespace: training
 data:
-  CLUSTER_NAME: set-by-overlay
+  CLUSTER_NAME: set-by-applicationset   # gpu-eks-scheduling이 클러스터 이름으로 덮어씀
