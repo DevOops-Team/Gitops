@@ -6,7 +6,7 @@ Argo CD가 보는 매니페스트 저장소입니다. 클러스터(온프레미�
 ```text
 bootstrap/    Argo CD root · project · Application 목록 (온프레 Argo CD가 EKS까지 허브 배포)
 onprem/       매니저 클러스터: platform · controllers · multikueue
-eks/          워커 클러스터: scheduling (base + overlays/eks-{a,b,c})
+eks/          워커 클러스터: scheduling (base, 클러스터별 값은 ApplicationSet이 IaC Secret 라벨로)
 monitoring/   onprem 저장 층 · eks 수집 층
 tools/        매니페스트 생성 · 검증 스크립트 (배포 대상 아님)
 ```
@@ -14,6 +14,7 @@ tools/        매니페스트 생성 · 검증 스크립트 (배포 대상 아�
 ## 규칙 (ADR-21)
 
 - 클러스터 차이는 `overlays/<cluster>`에만 둡니다. `base`에는 클러스터 이름을 넣지 않습니다.
+  예외: EKS 워커는 IaC가 만들고 지우는 클러스터라 이름 · GPU 쿼터를 ApplicationSet이 클러스터 Secret에서 받습니다 (GPU-199, `eks/README.md`).
 - Argo CD Application 하나는 디렉토리 경로 하나를 가리킵니다.
 - Argo CD가 배포하는 것만 둡니다. kind · kwok · examples 같은 개발용 매니페스트는 `K8s` 레포에 둡니다.
 - 시크릿은 커밋하지 않습니다.
