@@ -5,15 +5,15 @@ resources:
 # 온프레: 3개 (platform-worker 노드마다 하나). base는 0 (render.py 기본값과 맞춤)
 # 지금 설정은 사건을 받지 않는 기본값(event_source disabled)이라 health만 연다. 인증 sidecar 동작 확인용 (GPU-173)
 replicas:
-- name: recovery-controller
-  count: 3
-images:
+- count: 3
+  name: recovery-controller
 # aws-signing-helper는 사람이 올린다 (helper 버전은 배포 쪽에서 관리, K8s aws-signing-helper/README.md)
+images:
 - digest: sha256:527d6ffc3a8c1fde7de34273890f3cc16b83f23f8e5e881485b479c696352203
   name: ghcr.io/devoops-team/aws-signing-helper
   newName: ghcr.io/devoops-team/aws-signing-helper
   newTag: 1.1.0
-- digest: sha256:7af5ea2f426b6f7acc95380749f38a0c41b06f62806595aff89536fda10a3e24
+- digest: sha256:2badc8281f8e9937128c3e34f5dc14333cae3b8b7ca699ba22686d3a58df8bb4
   name: ghcr.io/devoops-team/recovery-controller
   newName: ghcr.io/devoops-team/recovery-controller
-  newTag: 1.1.0
+  newTag: 1.1.1
