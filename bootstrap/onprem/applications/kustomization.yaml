@@ -35,3 +35,4 @@ resources:
 - gpu-monitoring-blackbox.yaml
 - gpu-monitoring-alertmanager.yaml
 - gpu-monitoring-grafana.yaml
+- gpu-monitoring-logs.yaml       # 모니터링 클러스터 자신의 로그: Fluent Bit (GPU-139)
