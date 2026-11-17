@@ -61,6 +61,9 @@ managerConfig:
       resourceName: c1f6bfd2.kueue.x-k8s.io
     metrics:
       bindAddress: :8443
+      # 큐별 GPU 쿼터 · 사용량 지표 (kueue_cluster_queue_resource_usage · kueue_cluster_queue_nominal_quota).
+      # 복구 잡이 큐에서 자리가 없어 기다리는지 보는 용도, Agent가 수집 (GPU-186)
+      enableClusterQueueResources: true
     webhook:
       port: 9443
     multiKueue:
