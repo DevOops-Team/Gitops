@@ -1,0 +1,32 @@
+# 모니터링 클러스터 자신의 로그 수집: Fluent Bit DaemonSet(Pod · 커널 로그 → Loki OTLP 직접). OTel 게이트웨이는 두지 않는다
+# Monitoring 레포 deploy/agents/overlays/monitoring(kustomize). Secret 없음. 담당: 이태림 (ADR-18 · ADR-21)
+# 자동 sync: Monitoring main이나 이 파일이 바뀌면 반영한다. prune · selfHeal은 저장 층 Application과 같게 끈다 (GPU-139)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-monitoring-logs
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  project: gpu-monitoring
+  destination:
+    name: monitoring
+    namespace: monitoring                 # gpu-monitoring-base(-5)가 만든 네임스페이스
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: false
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+  source:
+    repoURL: https://github.com/DevOops-Team/Monitoring.git
+    targetRevision: main
+    path: deploy/agents/overlays/monitoring
