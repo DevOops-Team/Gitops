@@ -7,6 +7,7 @@ EKS에는 Argo CD가 없다. 온프레미스 Argo CD가 AppProject `gpu-eks` · 
 - `scheduling/base/`: 워커 Kueue · JobSet · NVIDIA device plugin Helm values(`kueue-values.yaml` · `jobset-values.yaml` · `nvidia-device-plugin-values.yaml`), Namespace, 큐(관리 클러스터와 같은 LocalQueue · WorkloadPriorityClass 이름), `training/trainer` SA · `devoops-cluster-info`, dispatcher 읽기 RBAC. 클러스터 이름을 넣지 않는다
 - 클러스터별 값(`CLUSTER_NAME`, 워커 GPU 쿼터)은 overlay 없이 ApplicationSet이 넣는다 (GPU-199). 이름은 클러스터 Secret 이름, 쿼터는 IaC가 Secret에 붙인 라벨 `devoops.site/train-gpus` · `devoops.site/spare-gpus`(IaC `config/prod.yaml` 토폴로지의 training · spare). 숫자의 원본은 IaC 한 곳
 - 배포: `bootstrap/onprem/applications/gpu-eks-scheduling.yaml`(ApplicationSet) → `gpu-eks-scheduling-<클러스터>`. Argo CD 클러스터 Secret에 라벨 `devoops.site/gpu-worker: "true"`가 있어야 대상이 된다
+- 모니터링 수집 층도 같은 조건의 ApplicationSet으로 올라간다: `bootstrap/onprem/applications/gpu-eks-monitoring.yaml` → `gpu-eks-monitoring-<클러스터>`. 매니페스트는 Monitoring 레포 `deploy/agents/overlays/eks`(담당 이태림, `monitoring/README.md`). `monitoring` 네임스페이스는 그 overlay가 만든다. 프로젝트는 `gpu-eks`가 아니라 범위를 좁힌 `gpu-eks-monitoring`(`bootstrap/onprem/project-eks-monitoring.yaml`) (GPU-186)
 - Git에 없는 것 (IaC가 넣음): Argo CD 클러스터 Secret(쿼터 라벨 포함), 관리 클러스터 `kueue-system/eks-*-kubeconfig`, EKS `kueue-system/multikueue-sa`(+ 토큰), EKS `training/ghcr-pull`
 
 IaC Ansible(`multikueue-access.yml`)이 `kueue-system` 네임스페이스와 `kueue-system/multikueue-sa`(MultiKueue용 SA · 토큰)를 먼저 만든다.
