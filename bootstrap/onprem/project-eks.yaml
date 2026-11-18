@@ -6,13 +6,12 @@ metadata:
   name: gpu-eks
   namespace: argocd
 spec:
-  description: EKS GPU workers (Kueue · JobSet · NVIDIA device plugin · worker queues · training namespace · monitoring agents), deployed from the on-prem hub
+  description: EKS GPU workers (Kueue · JobSet · NVIDIA device plugin · worker queues · training namespace), deployed from the on-prem hub
   sourceRepos:
   - https://github.com/DevOops-Team/Gitops.git
   - registry.k8s.io/kueue/charts
   - registry.k8s.io/jobset/charts
   - https://nvidia.github.io/k8s-device-plugin
-  - https://github.com/DevOops-Team/Monitoring.git   # 수집 층 deploy/agents/overlays/eks (gpu-eks-monitoring, GPU-186)
   destinations:
   - name: 'eks-*'
     namespace: kueue-system
@@ -22,8 +21,6 @@ spec:
     namespace: training
   - name: 'eks-*'
     namespace: kube-system     # Kueue visibility API의 extension-apiserver-authentication-reader RoleBinding
-  - name: 'eks-*'
-    namespace: monitoring      # 수집 층: Agent · KSM · OTel 게이트웨이 · Fluent Bit · node-exporter · dcgm-exporter (GPU-186)
   clusterResourceWhitelist:
   - {group: '', kind: Namespace}
   - {group: apiextensions.k8s.io, kind: CustomResourceDefinition}
