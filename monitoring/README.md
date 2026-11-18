@@ -3,7 +3,7 @@
 모니터링 배포. 담당: 이태림 (부 김성모). ADR-18 기준
 
 - `onprem/`: 저장 층 (Mimir · Loki · Tempo)
-- `eks/`: 수집 층 (Prometheus Agent · Fluent Bit · OTel Collector)
+- `eks/`: 수집 층 (Prometheus Agent · kube-state-metrics · Fluent Bit · OTel Collector · node-exporter · dcgm-exporter)
 
 ## 실제 배포 위치
 
@@ -12,6 +12,7 @@
 | 층 | 클러스터 | Application (`bootstrap/onprem/applications/`) | project | sync |
 |---|---|---|---|---|
 | 수집 층 | 관리 클러스터 | `gpu-monitoring-agents` → Monitoring `deploy/agents/overlays/onprem` | `gpu-platform` | automated |
+| 수집 층 | EKS 워커(`eks-*`, 켜져 있을 때만) | ApplicationSet `gpu-eks-monitoring` → `gpu-eks-monitoring-<클러스터>` → Monitoring `deploy/agents/overlays/eks`. 클러스터 이름은 ApplicationSet이 ConfigMap `monitoring-cluster-info`에 넣는다(GPU-186) | `gpu-eks` | automated |
 | 저장 층 | 모니터링 클러스터(원격, 이름 `monitoring`) | `gpu-monitoring-base`(Monitoring `deploy/base`) + 차트 8개 `gpu-monitoring-{local-path,node-exporter,kube-state-metrics,loki,tempo,blackbox,alertmanager,grafana}`(values = Monitoring `deploy/values/`) | `gpu-monitoring` | 수동 |
 
 - 모니터링 클러스터 등록은 IaC `ansible/playbooks/bootstrap/register-monitoring-cluster.yml`(GPU-177)

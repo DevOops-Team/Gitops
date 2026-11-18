@@ -1,0 +1,56 @@
+# EKS 워커마다 모니터링 수집 층 Application 하나 (gpu-eks-monitoring-<클러스터>): Prometheus Agent · kube-state-metrics ·
+# OTel 게이트웨이(CPU 노드) + Fluent Bit · node-exporter(전 노드) + dcgm-exporter(GPU 노드). 담당: 이태림 (ADR-18 · ADR-21)
+# 매니페스트는 Monitoring 레포 deploy/agents/overlays/eks. 클러스터 이름을 넣지 않은 공용 overlay다.
+# 대상은 gpu-eks-scheduling과 같다: Argo CD 클러스터 Secret에 라벨 devoops.site/gpu-worker: "true"가 있는 클러스터.
+# IaC가 EKS를 만들 때 Secret을 등록하면 생기고, 지우면 없어진다(GPU-126). EKS가 내려가 있는 동안은 Application이 하나도 없다.
+# 클러스터 이름은 Secret 이름에서 받아 ConfigMap monitoring/monitoring-cluster-info의 CLUSTER_NAME에 넣는다
+# → 지표의 cluster 라벨 · 로그의 k8s_cluster_name이 eks-a · eks-b · eks-c가 된다 (GPU-186).
+# targetRevision main: 관리 클러스터 쪽 gpu-monitoring-agents와 같다. Monitoring main 머지 리뷰가 안전장치다.
+# 데이터는 온프레 모니터링 클러스터(172.30.0.35)로 간다. pfSense IPsec 인바운드 규칙은 IaC GPU-149.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: gpu-eks-monitoring
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          devoops.site/gpu-worker: 'true'
+  syncPolicy:
+    preserveResourcesOnDeletion: true   # 클러스터가 사라질 때 리소스 삭제를 시도하지 않는다
+  template:
+    metadata:
+      name: 'gpu-eks-monitoring-{{.name}}'
+      namespace: argocd
+    spec:
+      project: gpu-eks
+      destination:
+        name: '{{.name}}'
+        namespace: monitoring
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=false   # 네임스페이스는 overlay 안에 있다
+        retry:
+          limit: 5
+          backoff:
+            duration: 15s
+            factor: 2
+            maxDuration: 5m
+      source:
+        repoURL: https://github.com/DevOops-Team/Monitoring.git
+        targetRevision: main
+        path: deploy/agents/overlays/eks
+        kustomize:
+          patches:
+          - target: {kind: ConfigMap, name: monitoring-cluster-info}
+            patch: |-
+              - op: replace
+                path: /data/CLUSTER_NAME
+                value: '{{.name}}'
