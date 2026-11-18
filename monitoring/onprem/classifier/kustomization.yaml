@@ -1,0 +1,18 @@
+# 분류기 (Alertmanager 웹훅 → 판정 → Kafka gpu.fault). 모니터링 클러스터 monitoring 네임스페이스. 담당: 이태림 (GPU-201)
+# base는 Monitoring 레포의 릴리스 태그로 고정한다(main을 가리키지 않는다). 버전을 올릴 때는 ref와 newTag를 같이 바꾼다
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+resources:
+- https://github.com/DevOops-Team/Monitoring//deploy/classifier/base?ref=v1.2.0
+images:
+- name: ghcr.io/devoops-team/classifier
+  newName: ghcr.io/devoops-team/classifier
+  newTag: 1.2.0
+patches:
+# GHCR 패키지가 비공개라 pull secret이 필요하다. Secret ghcr-pull은 Git에 없다(관리 클러스터 platform의 것을 복사해 넣음, Monitoring deploy/README.md)
+- target: {kind: Deployment, name: classifier}
+  patch: |-
+    - op: add
+      path: /spec/template/spec/imagePullSecrets
+      value: [{name: ghcr-pull}]
