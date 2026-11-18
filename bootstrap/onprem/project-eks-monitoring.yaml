@@ -1,0 +1,21 @@
+# EKS 워커의 모니터링 수집 층 배포 범위 (ApplicationSet gpu-eks-monitoring). 담당: 이태림 (GPU-186)
+# gpu-eks와 따로 둔다: 소스가 Monitoring 레포라서, 그 레포의 매니페스트가 gpu-eks에 허용된 넓은 범위
+# (CRD · 웹훅 · APIService, kueue-system · training · kube-system)를 쓸 수 없게 필요한 것만 연다.
+# 올라가는 것은 Monitoring 레포 deploy/agents/overlays/eks 하나: monitoring 네임스페이스 안의
+# Deployment · DaemonSet · Service · ConfigMap · ServiceAccount와, 읽기 전용 ClusterRole · ClusterRoleBinding(Agent · KSM · Fluent Bit)
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gpu-eks-monitoring
+  namespace: argocd
+spec:
+  description: Monitoring agents on EKS GPU workers (Prometheus Agent · kube-state-metrics · OTel gateway · Fluent Bit · node-exporter · dcgm-exporter), deployed from the on-prem hub
+  sourceRepos:
+  - https://github.com/DevOops-Team/Monitoring.git
+  destinations:
+  - name: 'eks-*'
+    namespace: monitoring
+  clusterResourceWhitelist:
+  - {group: '', kind: Namespace}
+  - {group: rbac.authorization.k8s.io, kind: ClusterRole}
+  - {group: rbac.authorization.k8s.io, kind: ClusterRoleBinding}

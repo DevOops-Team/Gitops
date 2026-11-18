@@ -27,7 +27,7 @@ spec:
       name: 'gpu-eks-monitoring-{{.name}}'
       namespace: argocd
     spec:
-      project: gpu-eks
+      project: gpu-eks-monitoring   # gpu-eks보다 좁은 전용 프로젝트 (project-eks-monitoring.yaml)
       destination:
         name: '{{.name}}'
         namespace: monitoring
