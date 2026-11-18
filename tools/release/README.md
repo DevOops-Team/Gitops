@@ -40,7 +40,7 @@ main 머지 (push)    version / release notes          머지 커밋의 PR 본�
 | | 배포 봇 `devoops-deploy-bot` | 버전 봇 (새로 만듦) |
 |---|---|---|
 | App 권한 | Contents: write · Metadata: read | Contents: write · Metadata: read |
-| 설치 레포 | Gitops만 | Backend · Frontend · K8s · Data만 |
+| 설치 레포 | Gitops만 | Backend · Frontend · K8s · Data · Monitoring만 |
 | 토큰 | Gitops 한 레포, `permission-contents: write` | 호출 레포 한 곳, `permission-contents: write` |
 | 비밀키 위치 | 각 코드 레포 Environment `gitops-deploy` Secret `DEPLOY_APP_PRIVATE_KEY` | 각 코드 레포 Environment `release` Secret `VERSION_APP_PRIVATE_KEY` |
 | 호출 쪽 | `secrets: DEPLOY_APP_PRIVATE_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}` | `secrets: VERSION_APP_PRIVATE_KEY: ${{ secrets.VERSION_APP_PRIVATE_KEY }}` |
