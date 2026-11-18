@@ -61,7 +61,7 @@ managerConfig:
       # 실행 중 Pod가 죽었을 때 Kueue가 혼자 내리고 다시 넣지 않게 끔.
       # 실행 중 장애의 재시작 여부는 장애복구 파트가 판단하고 재배치 요청으로만 처리 (세대 번호 없이 재시작되는 것 방지)
       recoveryTimeout: 0s
-      # 처음 입장할 때의 갱 실패(timeout)도 Kueue가 다시 큐에 넣지 않음 -> Workload 비활성화
-      # 재시작 주체는 복구 컨트롤러 하나 (JobSet 템플릿 5절, 11/05 확정). 감시기가 job.failed를 내고 복구 컨트롤러가 처리
+      # 처음 입장할 때의 갱 실패(timeout)는 Pod를 내리고 GPU를 반납한 뒤 Kueue가 같은 세대로 다시 큐에 넣음
+      # 최대 3번까지 재시도, 한도에 닿으면 Workload 비활성화(spec.active=false). 실행 중 장애는 위 recoveryTimeout: 0s로 복구 컨트롤러가 처리
       requeuingStrategy:
-        backoffLimitCount: 0
+        backoffLimitCount: 3
