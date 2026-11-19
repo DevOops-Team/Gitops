@@ -87,6 +87,10 @@ spec:
   template:
     metadata:
       labels: {app.kubernetes.io/name: recovery-controller, app.kubernetes.io/part-of: recovery}
+      annotations:               # 모니터링 Agent(annotated-pods 잡)가 8080/metrics를 긁는다: recovery_hold_total → RecoveryHold 알람
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
+        prometheus.io/path: /metrics
     spec:
       serviceAccountName: recovery-controller
       automountServiceAccountToken: true
