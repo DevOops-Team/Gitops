@@ -10,12 +10,16 @@
 #       digest: ${{ needs.image.outputs.digest }}
 #       overlay: ${{ vars.GITOPS_OVERLAY }}
 #       version: ${{ needs.plan.outputs.version }}      # 선택. 있으면 newTag로 같이 기록 (GPU-136)
+#       base-ref: ${{ needs.plan.outputs.tag }}          # 선택. overlay가 호출 레포를 원격 base로 쓸 때만 (예 Monitoring 분류기, GPU-212)
 #       app-id: ${{ vars.DEPLOY_APP_ID }}
 #       gitops-repo: ${{ vars.GITOPS_REPO }}
 #     secrets:
 #       DEPLOY_APP_PRIVATE_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}   # 이름으로 꼭 넘겨야 함 (값은 Environment 것이 쓰임)
 #
-# 봇(GitHub App)만 Gitops main ruleset 우회 대상이다. 바꾸는 것은 overlay의 images 항목 하나뿐이다.
+# 봇(GitHub App)만 Gitops main ruleset 우회 대상이다. 바꾸는 것은 overlay kustomization.yaml의 images 항목 하나뿐이다.
+#   base-ref를 넘긴 경우에만 같은 파일의 원격 base `github.com/<호출 레포>//…?ref=` 값도 바꾼다 (GPU-212).
+#   매니페스트(base)가 호출 레포에 있는 경우(Monitoring 분류기) 이미지와 매니페스트를 같은 릴리스로 맞추기 위함이다.
+#   base-ref 태그는 이 job 전에 있어야 한다 (kustomize build로 확인) → 호출 쪽 deploy가 release job 뒤에 돌게 할 것.
 #
 # 봇 비밀키는 호출 레포 Environment `gitops-deploy`(배포 브랜치 main만)의 Secret DEPLOY_APP_PRIVATE_KEY에만 둔다.
 #   main이 아닌 브랜치 · PR에서 이 job을 부르면 Environment 규칙에 막혀 키를 받지 못한다 (GPU-136).
@@ -36,6 +40,10 @@ on:
         required: true
       version:
         description: 이미지 버전 (예 1.2.0). 있으면 overlay에 newTag로 기록 — 실제 배포는 여전히 digest 기준
+        type: string
+        default: ""
+      base-ref:
+        description: 선택. overlay resources의 원격 base github.com/<호출 레포>//…?ref= 값을 이것으로 바꾼다 (예 v1.3.1). 비우면 건너뜀
         type: string
         default: ""
       overlay:
@@ -74,6 +82,7 @@ jobs:
       IMAGE: ${{ inputs.image }}
       DIGEST: ${{ inputs.digest }}
       VERSION: ${{ inputs.version }}
+      BASE_REF: ${{ inputs.base-ref }}
       OVERLAY: ${{ inputs.overlay }}
       GITOPS_REPO: ${{ inputs.gitops-repo }}
       BRANCH: ${{ inputs.branch }}
@@ -87,6 +96,7 @@ jobs:
           [[ "$OVERLAY" != /* && "$OVERLAY" != *..* ]] || { echo "::error::overlay는 레포 안 상대 경로: '$OVERLAY'"; exit 1; }
           [[ "$GITOPS_REPO" == */* ]] || { echo "::error::gitops-repo는 owner/name: '$GITOPS_REPO'"; exit 1; }
           [[ -z "$VERSION" || "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version은 X.Y.Z: '$VERSION'"; exit 1; }
+          [[ -z "$BASE_REF" || "$BASE_REF" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "::error::base-ref는 태그 · 커밋 SHA: '$BASE_REF'"; exit 1; }
           echo "owner=${GITOPS_REPO%%/*}" >> "$GITHUB_ENV"
           echo "name=${GITOPS_REPO#*/}" >> "$GITHUB_ENV"
 
@@ -133,7 +143,13 @@ jobs:
           label="${VERSION:-sha-${short_sha}}"
           git config user.name "$BOT_NAME"
           git config user.email "${BOT_NAME}@users.noreply.github.com"
+          base_pat="github.com/${GITHUB_REPOSITORY}//"   # 호출 레포 자신의 원격 base만 바꾼다
           for attempt in 1 2 3; do
+            if [ -n "$BASE_REF" ]; then
+              grep -q "${base_pat}.*?ref=" "$OVERLAY/kustomization.yaml" \
+                || { echo "::error::base-ref를 받았지만 $OVERLAY/kustomization.yaml에 ${base_pat}…?ref= 원격 base가 없음"; exit 1; }
+              sed -i -E "s#(${base_pat}[^?[:space:]]*\?ref=)[^[:space:]]+#\1${BASE_REF}#" "$OVERLAY/kustomization.yaml"
+            fi
             (cd "$OVERLAY" && kustomize edit set image "${IMAGE}=${ref}")
             # overlay의 kustomization.yaml 외 다른 파일이 바뀌면 중단
             changed=$(git diff --name-only)
@@ -141,7 +157,7 @@ jobs:
             [ "$changed" = "$OVERLAY/kustomization.yaml" ] || { echo "::error::예상 밖 변경: $changed"; exit 1; }
             kustomize build "$OVERLAY" > /dev/null
             git commit -am "deploy(${IMAGE##*/}): ${label}" \
-              -m "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" -m "image: ${ref}"
+              -m "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" -m "image: ${ref}${BASE_REF:+, base ref: ${BASE_REF}}"
             git push origin "HEAD:${BRANCH}" && { echo "### ${IMAGE##*/} ${VERSION} → \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
             echo "push 실패 — ${BRANCH} 다시 받아 재시도 (${attempt}/3)"
             git fetch origin "$BRANCH" && git reset --hard "origin/${BRANCH}"
