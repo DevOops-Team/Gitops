@@ -8,10 +8,10 @@ images:
   name: ghcr.io/devoops-team/aws-signing-helper
   newName: ghcr.io/devoops-team/aws-signing-helper
   newTag: 1.1.0
-- digest: sha256:20bcb8ddf82cda703ace9d0ee53aa914290385ee6662042756c1c13ef0090bca
+- digest: sha256:6ae53917c1b41dac1da521b3044d1d579053b8b6cc865ec330c6caf053c4c36e
   name: ghcr.io/devoops-team/backend
   newName: ghcr.io/devoops-team/backend
-  newTag: 1.6.1
+  newTag: 1.6.2
 - digest: sha256:9eb350207a11e7ce28cbf82e8f12b6abaaab4b85028fda1de0dc3198829f6985
   name: ghcr.io/devoops-team/checkpoint
   newName: ghcr.io/devoops-team/checkpoint
