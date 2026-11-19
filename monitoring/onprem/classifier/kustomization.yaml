@@ -4,12 +4,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: monitoring
 resources:
-- https://github.com/DevOops-Team/Monitoring//deploy/classifier/base?ref=v1.3.3
+- https://github.com/DevOops-Team/Monitoring//deploy/classifier/base?ref=v1.8.0
 images:
-- digest: sha256:76ffcf087e2066da3e2bb507ee4f5a76e32d22aad3904c045eb0d1c0c9cf3ca4
+- digest: sha256:976cde45f8ffa14d319f7a5e96ef3d941ed1300f3d5bdad163a810867078f192
   name: ghcr.io/devoops-team/classifier
   newName: ghcr.io/devoops-team/classifier
-  newTag: 1.3.3
+  newTag: 1.8.0
 # GHCR 패키지가 비공개라 pull secret이 필요하다. Secret ghcr-pull은 Git에 없다(관리 클러스터 platform의 것을 복사해 넣음, Monitoring deploy/README.md)
 patches:
 - patch: |-
