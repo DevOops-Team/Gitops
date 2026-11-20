@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "event_source": "kafka",
+  "mode": "observe",
+  "execution_enabled": false,
+  "aws_region": "us-east-2",
+  "recovery_table": "devoops-prod-recovery",
+  "fencing_table": "devoops-prod-fencing",
+  "kafka_bootstrap_servers": "172.30.0.40:9092,172.30.0.41:9092,172.30.0.42:9092",
+  "kafka_group_id": "recovery-controller-v1",
+  "fault_topic": "gpu.fault",
+  "result_topic": "recovery.action",
+  "redispatch_policy": "controller-only",
+  "scheduler_policy_confirmed": false,
+  "job_namespace": "training",
+  "reconcile_seconds": 5,
+  "straggler_auto_migration_enabled": false,
+  "watchdog": {
+    "enabled": false
+  },
+  "fencing_progress_input": {
+    "enabled": false,
+    "producer_contract_confirmed": false,
+    "attribute": "recovery_training_evidence"
+  },
+  "retry_policy": {
+    "api_attempts": 3,
+    "claim_timeout_seconds": 300,
+    "stop_timeout_seconds": 900,
+    "submit_timeout_seconds": 900,
+    "resume_timeout_seconds": 1800,
+    "kafka_backoff_seconds": 5,
+    "kafka_max_backoff_seconds": 300,
+    "max_recovery_attempts": 3,
+    "job_failed_wait_seconds": 300
+  },
+  "evidence_policy": {
+    "max_age_seconds": 300,
+    "future_skew_seconds": 30,
+    "placement_producers": [
+      "scheduling"
+    ],
+    "progress_producers": [
+      "training"
+    ]
+  }
+}
