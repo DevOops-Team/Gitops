@@ -12,10 +12,10 @@ images:
   name: ghcr.io/devoops-team/backend
   newName: ghcr.io/devoops-team/backend
   newTag: 1.8.0
-- digest: sha256:ed1313f782e8bf090fcdf36374443e7c83fe62c4dadc62c56ac222e6aba6a4ff
+- digest: sha256:ab8a2dbc16640e461fca2b81b644ca300ee18865e0e79e90cb70abbb8af32bf8
   name: ghcr.io/devoops-team/checkpoint
   newName: ghcr.io/devoops-team/checkpoint
-  newTag: 1.5.0
+  newTag: 1.8.2
 - digest: sha256:35436e86d7efea746fe84ce5098be41c0b531705e82c40ca6eb2db7f3197ab64
   name: ghcr.io/devoops-team/trainer
   newName: ghcr.io/devoops-team/trainer
