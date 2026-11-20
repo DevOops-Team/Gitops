@@ -2,8 +2,30 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../../base
+configMapGenerator:
+- name: recovery-controller-config
+  namespace: platform
+  behavior: replace
+  files:
+  - config.json
+patches:
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: recovery-controller
+  patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: recovery-controller
+    spec:
+      template:
+        metadata:
+          annotations:
+            devoops/config-sha256: 4bbd0ec760a0f0d35edc3940d9bee5d68f983ac6b4d280515577ce583075b7ed
 # 온프레: 3개 (platform-worker 노드마다 하나). base는 0 (render.py 기본값과 맞춤)
-# 지금 설정은 사건을 받지 않는 기본값(event_source disabled)이라 health만 연다. 인증 sidecar 동작 확인용 (GPU-173)
+# Kafka 수신·inbox 기록만 시험한다 (GPU-222). config.json 변경 시 checksum도 갱신한다.
 replicas:
 - count: 3
   name: recovery-controller
