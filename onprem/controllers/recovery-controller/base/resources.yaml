@@ -10,7 +10,8 @@ automountServiceAccountToken: false   # Pod에서만 켠다 (Lease · RR 생성)
 imagePullSecrets:
 - name: ghcr-pull                # GHCR private 패키지 (recovery-controller · aws-signing-helper)
 ---
-# 리더 선출 Lease를 미리 만들어 두고 get · update만 준다 (runtime/leadership.py)
+# 리더 선출 Lease (runtime/leadership.py). Argo CD 기본 resource.exclusions가 Lease를 빼서
+# 이 사본은 적용되지 않는다 → 컨트롤러가 404면 직접 만든다 (GPU-248). 수동 배포본(render.py)용으로 남긴다
 apiVersion: coordination.k8s.io/v1
 kind: Lease
 metadata:
@@ -30,6 +31,9 @@ rules:
   resources: [leases]
   resourceNames: [recovery-controller]
   verbs: [get, update]
+- apiGroups: [coordination.k8s.io]   # create는 resourceNames로 좁힐 수 없다 (platform 네임스페이스 안만)
+  resources: [leases]
+  verbs: [create]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
