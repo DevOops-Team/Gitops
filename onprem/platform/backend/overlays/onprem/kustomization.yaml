@@ -16,7 +16,7 @@ images:
   name: ghcr.io/devoops-team/checkpoint
   newName: ghcr.io/devoops-team/checkpoint
   newTag: 1.13.0
-- digest: sha256:966b6c6891faaf469ea382c1042392ae8f0ddc7a910a4b9517567af6a1a9bbb0
+- digest: sha256:883e193a01db6e860b525637c3bee306f0d8edc8e0c42d49d075ff635f54a63c
   name: ghcr.io/devoops-team/trainer
   newName: ghcr.io/devoops-team/trainer
-  newTag: 1.12.0
+  newTag: 1.13.0
