@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - backend-auth.yaml
   - collector-auth.yaml
+  - cloudflare-auth.yaml

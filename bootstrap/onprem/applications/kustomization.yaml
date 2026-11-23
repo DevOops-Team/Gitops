@@ -45,3 +45,4 @@ resources:
 - gpu-vault-connections.yaml
 - gpu-vault-backend-db.yaml
 - gpu-vault-collector-db.yaml
+- gpu-vault-cloudflare-dns.yaml

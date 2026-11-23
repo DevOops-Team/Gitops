@@ -1,0 +1,53 @@
+# 공개 CA Secret vault-vm-ca (key ca.crt)는 IaC bootstrap에서 준비한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault-vm
+  namespace: cert-manager
+spec:
+  address: https://172.30.0.81:8200
+  skipTLSVerify: false
+  caCertSecretRef: vault-vm-ca
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudflare-dns-sync
+  namespace: cert-manager
+automountServiceAccountToken: false
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: cloudflare-dns-sync
+  namespace: cert-manager
+spec:
+  vaultConnectionRef: vault-vm
+  method: kubernetes
+  mount: onprem
+  kubernetes:
+    role: cloudflare-dns-sync
+    serviceAccount: cloudflare-dns-sync
+---
+# client JWT reviewer 방식: 이 인증 SA에 TokenReview create만 허용한다.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-cloudflare-tokenreview
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-cloudflare-tokenreview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-cloudflare-tokenreview
+subjects:
+  - kind: ServiceAccount
+    name: cloudflare-dns-sync
+    namespace: cert-manager
