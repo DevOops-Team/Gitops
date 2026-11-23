@@ -1,0 +1,4 @@
+# Vault 서버는 외부 VM .81에 있다. 이 차트는 VSO만 설치한다.
+# 기존 수동 Helm 설치와 같은 release/namespace/version을 사용한다.
+defaultVaultConnection:
+  enabled: false
