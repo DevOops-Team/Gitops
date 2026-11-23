@@ -1,0 +1,78 @@
+# KV와 기존 Secret의 모든 값이 같고 초기 동기화가 성공한 뒤 인계한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: eks-a-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultAuthRef: eks-a-kubeconfig-sync
+  mount: devoops
+  type: kv-v2
+  path: onprem/kueue-system/eks-a-kubeconfig
+  refreshAfter: 60s
+  destination:
+    create: false
+    name: eks-a-kubeconfig
+    transformation:
+      excludeRaw: true
+# rolloutRestartTargets 없음: 비밀번호 교체/앱 재시작은 이번 인계 범위가 아니다.
+
+---
+# KV와 기존 Secret의 모든 값이 같고 초기 동기화가 성공한 뒤 인계한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: eks-a-relocator-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultAuthRef: eks-a-relocator-kubeconfig-sync
+  mount: devoops
+  type: kv-v2
+  path: onprem/kueue-system/eks-a-relocator-kubeconfig
+  refreshAfter: 60s
+  destination:
+    create: false
+    name: eks-a-relocator-kubeconfig
+    transformation:
+      excludeRaw: true
+# rolloutRestartTargets 없음: 비밀번호 교체/앱 재시작은 이번 인계 범위가 아니다.
+
+---
+# KV와 기존 Secret의 모든 값이 같고 초기 동기화가 성공한 뒤 인계한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: eks-b-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultAuthRef: eks-b-kubeconfig-sync
+  mount: devoops
+  type: kv-v2
+  path: onprem/kueue-system/eks-b-kubeconfig
+  refreshAfter: 60s
+  destination:
+    create: false
+    name: eks-b-kubeconfig
+    transformation:
+      excludeRaw: true
+# rolloutRestartTargets 없음: 비밀번호 교체/앱 재시작은 이번 인계 범위가 아니다.
+
+---
+# KV와 기존 Secret의 모든 값이 같고 초기 동기화가 성공한 뒤 인계한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: eks-b-relocator-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultAuthRef: eks-b-relocator-kubeconfig-sync
+  mount: devoops
+  type: kv-v2
+  path: onprem/kueue-system/eks-b-relocator-kubeconfig
+  refreshAfter: 60s
+  destination:
+    create: false
+    name: eks-b-relocator-kubeconfig
+    transformation:
+      excludeRaw: true
+# rolloutRestartTargets 없음: 비밀번호 교체/앱 재시작은 이번 인계 범위가 아니다.

@@ -79,3 +79,7 @@ AWS Pod Identity·Roles Anywhere, 워커 kubeconfig 발급/갱신/삭제 경로�
 
 [프로젝트 설계](https://devoops-team.atlassian.net/wiki/spaces/GPUF/pages/29949958) ·
 [IaC PR #51](https://github.com/DevOops-Team/IaC/pull/51)
+
+## 워커 kubeconfig 후속 인계
+
+기존 kueue-system의 kubeconfig 4개는 [worker-kubeconfigs/README.md](worker-kubeconfigs/README.md)의 명령으로 원본을 Vault에 복사한 뒤 전용 수동 Application으로 인계한다. 현재는 코드 준비 상태이며 실제 동기화 완료를 뜻하지 않는다.
