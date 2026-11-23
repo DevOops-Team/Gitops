@@ -17,3 +17,8 @@
 컨트롤러 이미지 digest는 K8s CI 봇이 `controllers/<이름>/overlays/onprem/kustomization.yaml`의 `images:`에 커밋한다 (ADR-23, K8s Variable `DEPLOY_IMAGES`에 든 것만).
 `data/<이름>/overlays/onprem`은 Data CI 봇이 같은 방식으로 갱신한다 (Data Variable `DEPLOY_IMAGES`).
 MultiKueue kubeconfig Secret(`kueue-system/eks-*-kubeconfig`)은 IaC가 등록하고 여기에는 이름만 둔다.
+# Vault 공통 연결
+
+외부 Vault `.81`의 정적 KV를 기존 DB Secret으로 동기화하는 구성은
+[platform/vault/README.md](platform/vault/README.md)를 따른다. VSO/공통 인증/각 DB Application은
+수동 sync이며, 기존 비밀번호·Deployment는 변경하지 않는다. 운영 적용 전 현재 Helm/Secret과 diff를 확인한다.

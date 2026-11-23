@@ -29,6 +29,14 @@ jobs:
       - name: Build and validate manifests
         run: tools/validate.sh
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vault official CRD schema and handoff contract (no cluster access)
+        run: |
+          pip install pyyaml jsonschema
+          python tools/vault/validate.py
+
   release-tools:
     name: release tools · test
     runs-on: ubuntu-24.04
