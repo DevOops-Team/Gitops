@@ -54,9 +54,11 @@ managerConfig:
     webhook:
       port: 9443
     # 갱 스케줄링(전부 아니면 전무): 승인 후 timeout 안에 Pod 전부 Ready가 안 되면 통째로 내림
-    # timeout 10m: PyTorch CUDA trainer 이미지(수 GB) pull · 모델 다운로드 시간
+    # timeout 20m: ckpt-init 승인본 다운로드(DOWNLOAD_DEADLINE_S 600초) + PyTorch CUDA trainer 이미지(수 GB) pull · 시작 시간.
+    # 10m이면 다운로드가 성공해도 Kueue가 먼저 내리고 같은 다운로드를 다시 반복함 (GPU-256 · GPU-264).
+    # 규칙: timeout >= DOWNLOAD_DEADLINE_S + 이미지 pull · 시작 여유 5분 이상. 바꾸면 Data env KUEUE_READY_TIMEOUT_S도 같이 맞춤
     waitForPodsReady:
-      timeout: 10m
+      timeout: 20m
       # 끔: 켜면 앞 잡 Pod가 전부 Ready(이미지 pull · ckpt-init 포함)일 때까지 이 워커 전체가 다음 잡(복구 잡 포함)을 안 받음.
       # 새 노드에서는 60초를 넘겨 디스패처 재지명(RENOMINATE_SECONDS)과 충돌 (GPU-260).
       # 노드가 쿼터보다 적을 때의 반쪽 교착은 디스패처가 실제 노드 여유를 보고 지명해서 대부분 막고,
