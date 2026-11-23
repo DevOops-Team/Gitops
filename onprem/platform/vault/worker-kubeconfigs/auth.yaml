@@ -1,0 +1,185 @@
+# 공개 CA Secret vault-vm-ca (key ca.crt)는 IaC bootstrap에서 준비한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault-vm
+  namespace: kueue-system
+spec:
+  address: https://172.30.0.81:8200
+  skipTLSVerify: false
+  caCertSecretRef: vault-vm-ca
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eks-a-kubeconfig-sync
+  namespace: kueue-system
+automountServiceAccountToken: false
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: eks-a-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultConnectionRef: vault-vm
+  method: kubernetes
+  mount: onprem
+  kubernetes:
+    role: eks-a-kubeconfig-sync
+    serviceAccount: eks-a-kubeconfig-sync
+---
+# client JWT reviewer 방식: 이 인증 SA에 TokenReview create만 허용한다.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-eks-a-kubeconfig-tokenreview
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-eks-a-kubeconfig-tokenreview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-eks-a-kubeconfig-tokenreview
+subjects:
+  - kind: ServiceAccount
+    name: eks-a-kubeconfig-sync
+    namespace: kueue-system
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eks-a-relocator-kubeconfig-sync
+  namespace: kueue-system
+automountServiceAccountToken: false
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: eks-a-relocator-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultConnectionRef: vault-vm
+  method: kubernetes
+  mount: onprem
+  kubernetes:
+    role: eks-a-relocator-kubeconfig-sync
+    serviceAccount: eks-a-relocator-kubeconfig-sync
+---
+# client JWT reviewer 방식: 이 인증 SA에 TokenReview create만 허용한다.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-eks-a-relocator-kubeconfig-tokenreview
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-eks-a-relocator-kubeconfig-tokenreview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-eks-a-relocator-kubeconfig-tokenreview
+subjects:
+  - kind: ServiceAccount
+    name: eks-a-relocator-kubeconfig-sync
+    namespace: kueue-system
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eks-b-kubeconfig-sync
+  namespace: kueue-system
+automountServiceAccountToken: false
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: eks-b-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultConnectionRef: vault-vm
+  method: kubernetes
+  mount: onprem
+  kubernetes:
+    role: eks-b-kubeconfig-sync
+    serviceAccount: eks-b-kubeconfig-sync
+---
+# client JWT reviewer 방식: 이 인증 SA에 TokenReview create만 허용한다.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-eks-b-kubeconfig-tokenreview
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-eks-b-kubeconfig-tokenreview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-eks-b-kubeconfig-tokenreview
+subjects:
+  - kind: ServiceAccount
+    name: eks-b-kubeconfig-sync
+    namespace: kueue-system
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eks-b-relocator-kubeconfig-sync
+  namespace: kueue-system
+automountServiceAccountToken: false
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: eks-b-relocator-kubeconfig-sync
+  namespace: kueue-system
+spec:
+  vaultConnectionRef: vault-vm
+  method: kubernetes
+  mount: onprem
+  kubernetes:
+    role: eks-b-relocator-kubeconfig-sync
+    serviceAccount: eks-b-relocator-kubeconfig-sync
+---
+# client JWT reviewer 방식: 이 인증 SA에 TokenReview create만 허용한다.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vault-eks-b-relocator-kubeconfig-tokenreview
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-eks-b-relocator-kubeconfig-tokenreview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: vault-eks-b-relocator-kubeconfig-tokenreview
+subjects:
+  - kind: ServiceAccount
+    name: eks-b-relocator-kubeconfig-sync
+    namespace: kueue-system

@@ -1,0 +1,40 @@
+# KV와 기존 Secret의 모든 값이 같고 초기 동기화가 성공한 뒤 인계한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: ghcr-pull-sync
+  namespace: platform
+spec:
+  vaultAuthRef: ghcr-pull-sync
+  mount: devoops
+  type: kv-v2
+  path: onprem/platform/ghcr-pull
+  refreshAfter: 60s
+  # create:false 는 기존 Secret 타입을 유지한다. type 필드는 create:true용이므로 생략한다.
+  destination:
+    create: false
+    name: ghcr-pull
+    transformation:
+      excludeRaw: true
+# rolloutRestartTargets 없음: 비밀번호 교체/앱 재시작은 이번 인계 범위가 아니다.
+
+---
+# KV와 기존 Secret의 모든 값이 같고 초기 동기화가 성공한 뒤 인계한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: ghcr-pull-sync
+  namespace: data-system
+spec:
+  vaultAuthRef: ghcr-pull-sync
+  mount: devoops
+  type: kv-v2
+  path: onprem/data-system/ghcr-pull
+  refreshAfter: 60s
+  # create:false 는 기존 Secret 타입을 유지한다. type 필드는 create:true용이므로 생략한다.
+  destination:
+    create: false
+    name: ghcr-pull
+    transformation:
+      excludeRaw: true
+# rolloutRestartTargets 없음: 비밀번호 교체/앱 재시작은 이번 인계 범위가 아니다.
