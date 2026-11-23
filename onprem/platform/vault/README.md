@@ -83,3 +83,7 @@ AWS Pod Identity·Roles Anywhere, 워커 kubeconfig 발급/갱신/삭제 경로�
 ## 워커 kubeconfig 후속 인계
 
 기존 kueue-system의 kubeconfig 4개는 [worker-kubeconfigs/README.md](worker-kubeconfigs/README.md)의 명령으로 원본을 Vault에 복사한 뒤 전용 수동 Application으로 인계한다. 현재는 코드 준비 상태이며 실제 동기화 완료를 뜻하지 않는다.
+
+## GHCR 이미지 pull Secret 후속 인계
+
+[ghcr-pull/README.md](ghcr-pull/README.md)에 platform/data-system의 기존 ghcr-pull 두 개 인계 조건을 정리했다. 매니페스트 준비 상태이며 Vault 등록·실제 동기화 완료가 아니다.

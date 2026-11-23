@@ -47,3 +47,4 @@ resources:
 - gpu-vault-collector-db.yaml
 - gpu-vault-cloudflare-dns.yaml
 - gpu-vault-worker-kubeconfigs.yaml
+- gpu-vault-ghcr-pull.yaml
