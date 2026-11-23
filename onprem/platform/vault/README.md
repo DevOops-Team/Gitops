@@ -10,7 +10,8 @@
 | Collector DB | 사용자 연결 성공 보고. `data-system/collector-db` → KV `devoops/onprem/data-system/collector-db` |
 | VSO | 위 DB 연결 성공 보고에 따른 동기화 경로. 실제 live Helm values·이미지·권한은 이번 코드 작성 중 조회하지 않음 |
 | 코드화 | IaC PR #51 + 이 매니페스트. push/PR/머지와 운영 적용은 별개 |
-| HA/추가 Secret | `.82`·`.83` 가입, Vault 접속 주소 HA, Cloudflare·Kafka·모니터링 등 추가 인계는 미완료 |
+| Cloudflare | 매니페스트 준비. 실제 토큰의 Vault 등록·cert-manager namespace 공개 CA 준비·수동 Sync는 별도 |
+| HA/추가 Secret | `.82`·`.83` 가입, Vault 접속 주소 HA, Cloudflare 실제 연결·Kafka·모니터링 등 추가 인계는 미완료 |
 
 본 문서는 **사용자 보고와 이전 출력**을 정리한 것이며 새 운영 점검 결과가 아니다.
 
@@ -22,7 +23,7 @@
 | IaC `ansible/playbooks/vault/configure-kubernetes-auth.yml` | `auth/onprem` API/CA 연결, 서비스별 read 정책·role, 공개 CA Secret 등록 |
 | `operator/values.yaml` | VSO Helm 1.6.0, release `vault-secrets-operator`, namespace `vault-secrets-operator-system` |
 | `common/` | namespace별 VaultConnection·VaultAuth·동기화 전용 SA·최소 TokenReview RBAC |
-| `backend-db/`, `collector-db/` | 기존 Secret으로 값을 동기화하는 VaultStaticSecret. 비밀값 없음 |
+| `backend-db/`, `collector-db/`, `cloudflare-dns/` | 기존 Secret으로 값을 동기화하는 VaultStaticSecret. 비밀값 없음 |
 | `bootstrap/onprem/applications/gpu-vault-*.yaml` | 위 요소의 수동 동기화용 Argo Application |
 
 Vault 서버 Pod·Agent 사이드카·Vault PKI·동적 DB 계정은 추가하지 않는다.
@@ -43,7 +44,7 @@ VSO/앱에서 이 공개 CA를 Vault로부터 받아야 하는 순환 의존을 
 8. VSO의 실제 `SecretSynced` 사건·성공 상태와 기존 Secret UID/type/data 유지, 서비스 DB 접속을 확인한다.
    Secret의 `resourceVersion`이나 VSO HMAC/annotation 같은 메타데이터는 변경될 수 있다.
 
-네 Application에는 `automated`·자동 prune·앱 rollout restart 설정이 없다.
+다섯 Vault Application에는 `automated`·자동 prune·앱 rollout restart 설정이 없다.
 부모 root의 수동/자동 설정과 별개로 **Application 생성만으로 자식의 초기 sync를 수행하지 않는다**.
 이미 존재하는 VaultStaticSecret은 VSO가 계속 처리하므로, 수동 sync 설정이 기존 동기화를 정지시키는 것은 아니다.
 
@@ -53,6 +54,7 @@ VSO/앱에서 이 공개 CA를 Vault로부터 받아야 하는 순환 의존을 
 Vault 원본 경로                          Kubernetes 목적지
 devoops/onprem/platform/backend-db       platform/backend-db
 devoops/onprem/data-system/collector-db  data-system/collector-db
+devoops/onprem/cert-manager/cloudflare-dns-api-token  cert-manager/cloudflare-dns-api-token
 ```
 
 `destination.create: false`는 기존 Secret에 쓰는 설정이다. 읽기 전용 의미가 아니다.
@@ -69,7 +71,7 @@ audience는 현재 수동 설정과 동일하게 비워 두며, 강화 시 Vault
 
 ## 후속 대상
 
-Cloudflare API 토큰은 cert-manager 인증서 Secret과 구분해 이전한다.
+Cloudflare API 토큰은 [cloudflare-dns/README.md](cloudflare-dns/README.md)의 사전 준비 후 수동 Sync한다. cert-manager 인증서 Secret과 구분해 이전한다.
 `frontend-tls`는 cert-manager가 계속 관리한다. Kafka는 실제 인증이 있는 경우만 추가한다.
 모니터링의 Slack/DB Secret은 담당 생성 도구와 인계한 뒤 대상별로 추가한다.
 AWS Pod Identity·Roles Anywhere, 워커 kubeconfig 발급/갱신/삭제 경로는 이번에 이전하지 않는다.
