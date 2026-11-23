@@ -4,12 +4,13 @@ metadata:
   name: gpu-platform
   namespace: argocd
 spec:
-  description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend · data · Kueue · JobSet · scheduling controllers)
+  description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend · data · Kueue · JobSet · scheduling controllers · Vault Secrets Operator)
   sourceRepos:
   - https://github.com/DevOops-Team/Gitops.git
   - https://github.com/DevOops-Team/Monitoring.git   # 모니터링 수집 층 매니페스트 (Monitoring deploy/agents, 이태림)
   - https://traefik.github.io/charts
   - https://charts.jetstack.io
+  - https://helm.releases.hashicorp.com  # 외부 Vault VM 연결용 VSO (GPU-241)
   - https://metallb.github.io/metallb
   - registry.k8s.io/kueue/charts       # Kueue 공식 Helm 차트 (OCI)
   - registry.k8s.io/jobset/charts      # JobSet 공식 Helm 차트 (OCI)
@@ -34,6 +35,8 @@ spec:
     namespace: jobset-system
   - server: https://kubernetes.default.svc
     namespace: kube-system     # Kueue visibility API의 extension-apiserver-authentication-reader RoleBinding 하나
+  - server: https://kubernetes.default.svc
+    namespace: vault-secrets-operator-system
   clusterResourceWhitelist:
   - group: ''
     kind: Namespace

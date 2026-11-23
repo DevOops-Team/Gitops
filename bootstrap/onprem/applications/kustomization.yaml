@@ -40,3 +40,8 @@ resources:
 - gpu-monitoring-kafka-exporter.yaml   # 컨슈머 그룹 lag: kafka_exporter (GPU-139)
 - gpu-monitoring-postgres-exporter.yaml   # PostgreSQL 상태: postgres_exporter (GPU-139)
 - gpu-monitoring-classifier.yaml   # 분류기: 원인 알람 → gpu.fault (GPU-201)
+# Vault VM + VSO: 모두 수동 sync. 최초 인계는 operator → connections → 각 DB 순서.
+- gpu-vault-operator.yaml
+- gpu-vault-connections.yaml
+- gpu-vault-backend-db.yaml
+- gpu-vault-collector-db.yaml
