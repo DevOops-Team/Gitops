@@ -5,5 +5,6 @@ resources:
 - project-eks.yaml
 - project-eks-monitoring.yaml
 - project-monitoring.yaml
+- project-monitoring-vault.yaml
 - repositories.yaml
 - root.yaml

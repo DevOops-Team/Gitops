@@ -1,0 +1,21 @@
+# 원격 monitoring 클러스터 VSO 전용. 저장 층 앱의 허용 범위는 넓히지 않는다.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gpu-monitoring-vault
+  namespace: argocd
+spec:
+  description: Monitoring cluster Vault Secrets Operator and static secret handoff
+  sourceRepos:
+  - https://github.com/DevOops-Team/Gitops.git
+  - https://helm.releases.hashicorp.com
+  destinations:
+  - name: monitoring
+    namespace: monitoring
+  - name: monitoring
+    namespace: vault-secrets-operator-system
+  clusterResourceWhitelist:
+  - {group: '', kind: Namespace}
+  - {group: apiextensions.k8s.io, kind: CustomResourceDefinition}
+  - {group: rbac.authorization.k8s.io, kind: ClusterRole}
+  - {group: rbac.authorization.k8s.io, kind: ClusterRoleBinding}

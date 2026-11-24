@@ -1,0 +1,18 @@
+# 기존 Secret의 모든 key/byte와 Vault 값 비교 후 수동 인계.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: postgres-exporter-sync
+  namespace: monitoring
+spec:
+  vaultAuthRef: postgres-exporter-sync
+  mount: devoops
+  type: kv-v2
+  path: onprem/monitoring/postgres-exporter-secrets
+  refreshAfter: 60s
+  destination:
+    create: false
+    name: postgres-exporter-secrets
+    transformation:
+      excludeRaw: true
+# destination.type/overwrite/rolloutRestartTargets 없음: 기존 type과 실행 상태 유지.
