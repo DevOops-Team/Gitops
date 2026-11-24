@@ -24,4 +24,6 @@ spec:
   - {group: storage.k8s.io, kind: StorageClass}             # local-path
   - {group: rbac.authorization.k8s.io, kind: ClusterRole}   # Prometheus Agent · kube-state-metrics · grafana · local-path
   - {group: rbac.authorization.k8s.io, kind: ClusterRoleBinding}
-  - {group: apiextensions.k8s.io, kind: CustomResourceDefinition}   # Tempo 분산형의 rollout-operator CRD 2개(webhook은 끔, GPU-227)
+  # Tempo 분산형의 rollout-operator CRD 2개 때문(GPU-227). 허용은 종류 단위라 이 프로젝트의 어떤 Application도 아무 CRD나 만들 수 있다.
+  # 범위가 새로 넓어지지는 않는다: 위 ClusterRole · ClusterRoleBinding 허용으로 이미 cluster-admin 바인딩까지 만들 수 있다
+  - {group: apiextensions.k8s.io, kind: CustomResourceDefinition}
