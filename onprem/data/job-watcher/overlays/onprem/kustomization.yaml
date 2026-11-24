@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
 - ../../base
 images:
-- digest: sha256:8d69ec954cd723f01c9d0a2866f8abd4e29246a62ea3310685ad7059a788e354
+- digest: sha256:63206a7563e7376c45f8c9e3db2bca590c23317ce61e5ff768b0823b644acad7
   name: ghcr.io/devoops-team/job-watcher
   newName: ghcr.io/devoops-team/job-watcher
-  newTag: 1.4.1
+  newTag: 1.12.0

@@ -3,18 +3,13 @@ kind: Kustomization
 resources:
 - ../../base
 configMapGenerator:
-- name: recovery-controller-config
-  namespace: platform
-  behavior: replace
+- behavior: replace
   files:
   - config.json
+  name: recovery-controller-config
+  namespace: platform
 patches:
-- target:
-    group: apps
-    version: v1
-    kind: Deployment
-    name: recovery-controller
-  patch: |-
+- patch: |-
     apiVersion: apps/v1
     kind: Deployment
     metadata:
@@ -24,6 +19,11 @@ patches:
         metadata:
           annotations:
             devoops/config-sha256: 46c87a568a77c7540fb91d5fd8cbbe06d52d421c4afde8a4334a20bbe3ac56e1
+  target:
+    group: apps
+    kind: Deployment
+    name: recovery-controller
+    version: v1
 # 온프레: 3개 (platform-worker 노드마다 하나). base는 0 (render.py 기본값과 맞춤)
 # Kafka 실제 복구 execute 모드 (GPU-222). config.json 변경 시 checksum도 갱신한다.
 replicas:
@@ -35,7 +35,7 @@ images:
   name: ghcr.io/devoops-team/aws-signing-helper
   newName: ghcr.io/devoops-team/aws-signing-helper
   newTag: 1.1.0
-- digest: sha256:3526d1f64d93f27588c7d713d97b241d108fb7bf675b5c1425cd1b514b458cea
+- digest: sha256:432e5bd3bb1bd682b34e4a1d6a561628cb1d7874582fd46d1799ff2fa1a60ad4
   name: ghcr.io/devoops-team/recovery-controller
   newName: ghcr.io/devoops-team/recovery-controller
-  newTag: 1.6.1
+  newTag: 1.7.2
