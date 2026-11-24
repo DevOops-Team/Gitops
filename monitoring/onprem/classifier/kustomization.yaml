@@ -19,3 +19,12 @@ patches:
   target:
     kind: Deployment
     name: classifier
+# 사이트 신호도 받는다(GPU-220). 코드 기본값은 xid,pod_exit. 이 값과 Monitoring Alertmanager 라우트(signal에 site)가 둘 다 있어야 사이트 장애 → 작업마다 fence_evacuate가 나간다.
+# 복구 컨트롤러가 실행 모드라 실제 대피가 일어난다. 켜는 시각은 송이 · 성모와 맞춘다(eks-a · b 둘 다 켜져 학습 중일 때)
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,site"}
+  target:
+    kind: Deployment
+    name: classifier
