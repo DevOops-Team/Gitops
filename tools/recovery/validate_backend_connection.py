@@ -35,7 +35,11 @@ def main():
     assert service['spec']['type'] == 'ClusterIP'
     assert service['spec']['ports'][0] == {'name':'recovery-https', 'port':8443, 'targetPort':'recovery-https'}
     back_app = named(build('bootstrap/onprem/applications'), 'Application', 'gpu-backend')
-    assert back_app['spec']['source']['path'] == 'onprem/platform/backend/overlays/onprem'
+    # 내부 HTTPS 전환 뒤 (GPU-119): gpu-backend 하나가 TLS overlay를 관리한다 (같은 Deployment를 앱 두 개로 관리하지 않음)
+    assert back_app['spec']['source']['path'] == 'onprem/platform/backend/overlays/onprem-recovery-api'
+    backend_paths = [src.get('path', '') for d in build('bootstrap/onprem/applications') if d and d['kind'] == 'Application'
+                     for src in ([d['spec']['source']] if 'source' in d['spec'] else d['spec'].get('sources', []))]
+    assert sum(p.startswith('onprem/platform/backend/overlays/') for p in backend_paths) == 1
     tls_app = named(build('bootstrap/onprem/applications'), 'Application', 'gpu-backend-recovery-tls')
     assert 'automated' not in tls_app['spec']['syncPolicy']
     assert not tls_app['metadata'].get('finalizers')
@@ -71,9 +75,13 @@ def main():
     configmap=named(tls,'ConfigMap',next(d['metadata']['name'] for d in tls if d['kind']=='ConfigMap' and 'nginx.conf' in d.get('data',{})))
     assert 'proxy_pass http://127.0.0.1:8000' in configmap['data']['nginx.conf']
     assert 'location / { return 404; }' in configmap['data']['nginx.conf']
+    # 읽기 전용 루트에서 nginx가 시작 때 만드는 임시 경로가 모두 /tmp(emptyDir)에 있어야 기동한다
+    for temp in ('client_body', 'proxy', 'fastcgi', 'uwsgi', 'scgi'):
+        assert f'{temp}_temp_path /tmp/' in configmap['data']['nginx.conf'], temp
+    assert any(m['mountPath'] == '/tmp' for m in proxy['volumeMounts'])
     assert 'sha256sum' in configmap['data']['run.sh'] and 'kill -HUP' in configmap['data']['run.sh']
     subprocess.run(['sh','-n',str(ROOT/'onprem/platform/backend/overlays/onprem-recovery-api/run.sh')],check=True)
-    print('Backend token/HTTPS/CA/disabled activation render contract passed')
+    print('Backend token/HTTPS/CA render contract passed (TLS overlay active, backend_metadata disabled)')
 
 
 if __name__ == '__main__':
