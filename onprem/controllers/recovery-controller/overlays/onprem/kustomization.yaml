@@ -18,14 +18,14 @@ patches:
       template:
         metadata:
           annotations:
-            devoops/config-sha256: 4bbd0ec760a0f0d35edc3940d9bee5d68f983ac6b4d280515577ce583075b7ed
+            devoops/config-sha256: 46c87a568a77c7540fb91d5fd8cbbe06d52d421c4afde8a4334a20bbe3ac56e1
   target:
     group: apps
     kind: Deployment
     name: recovery-controller
     version: v1
 # 온프레: 3개 (platform-worker 노드마다 하나). base는 0 (render.py 기본값과 맞춤)
-# Kafka 수신·inbox 기록만 시험한다 (GPU-222). config.json 변경 시 checksum도 갱신한다.
+# Kafka 실제 복구 execute 모드 (GPU-222). config.json 변경 시 checksum도 갱신한다.
 replicas:
 - count: 3
   name: recovery-controller
