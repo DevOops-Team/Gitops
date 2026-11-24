@@ -47,6 +47,8 @@ def main():
     docs = []
     for path in ['common', 'backend-db', 'collector-db', 'cloudflare-dns', 'worker-kubeconfigs', 'ghcr-pull']:
         docs.extend(build(f'onprem/platform/vault/{path}'))
+    for path in ['connections', 'alertmanager', 'grafana', 'postgres-exporter', 'ghcr-pull']:
+        docs.extend(build(f'monitoring/onprem/vault/{path}'))
     count = 0
     for doc in docs:
         if doc['apiVersion'].startswith('secrets.hashicorp.com/'):
@@ -84,26 +86,54 @@ def main():
         assert d['spec']['refreshAfter'] == '60s'
     ghcr = [d for d in docs if d['kind'] == 'VaultStaticSecret'
             and d['spec']['destination']['name'] == 'ghcr-pull']
-    assert len(ghcr) == 2
-    assert {d['metadata']['namespace'] for d in ghcr} == {'platform', 'data-system'}
+    assert len(ghcr) == 3
+    assert {d['metadata']['namespace'] for d in ghcr} == {'platform', 'data-system', 'monitoring'}
     for d in ghcr:
         assert d['spec']['vaultAuthRef'] == 'ghcr-pull-sync'
         assert 'type' not in d['spec']['destination']  # create:false로 기존 타입 유지
         assert not d['spec']['destination'].get('overwrite', False)
     auths = [d for d in docs if d['kind'] == 'VaultAuth'
              and d['metadata']['name'] == 'ghcr-pull-sync']
-    assert len(auths) == 2
-    assert {d['metadata']['namespace'] for d in auths} == {'platform', 'data-system'}
+    assert len(auths) == 3
+    assert {d['metadata']['namespace'] for d in auths} == {'platform', 'data-system', 'monitoring'}
     for d in auths:
         assert d['spec']['vaultConnectionRef'] == 'vault-vm'
         assert d['spec']['kubernetes']['role'] == d['metadata']['namespace'] + '-ghcr-pull-sync'
-    assert count == 22
+    monitoring = [d for d in docs if d.get('metadata', {}).get('namespace') == 'monitoring']
+    syncs = [d for d in monitoring if d['kind'] == 'VaultStaticSecret']
+    assert {d['spec']['destination']['name'] for d in syncs} == {
+        'alertmanager-secrets', 'grafana-secrets', 'postgres-exporter-secrets', 'ghcr-pull'}
+    assert len(syncs) == 4
+    assert not any(d['spec']['destination']['name'].endswith('-s3-cert') for d in syncs)
+    for d in monitoring:
+        if d['kind'] == 'VaultAuth':
+            assert d['spec']['mount'] == 'monitoring'  # separate API/CA from auth/onprem
+            assert d['spec']['kubernetes']['role'] == 'monitoring-' + d['metadata']['name']
+    service_accounts = {d['metadata']['name'] for d in monitoring if d['kind'] == 'ServiceAccount'}
+    assert service_accounts == {d['spec']['vaultAuthRef'] for d in syncs}
+    binding = next(d for d in docs if d['kind'] == 'ClusterRoleBinding'
+                   and d['metadata']['name'] == 'vault-monitoring-tokenreview')
+    assert {s['name'] for s in binding['subjects']} == service_accounts
+    assert all(s['namespace'] == 'monitoring' for s in binding['subjects'])
+    project = yaml.safe_load((ROOT / 'bootstrap/onprem/project-monitoring-vault.yaml').read_text())
+    assert {d['name'] for d in project['spec']['destinations']} == {'monitoring'}
+    assert {d['namespace'] for d in project['spec']['destinations']} == {
+        'monitoring', 'vault-secrets-operator-system'}
+    assert count == 31
     apps = [doc for doc in build('bootstrap/onprem/applications')
-            if doc['kind'] == 'Application' and doc['metadata']['name'].startswith('gpu-vault-')]
-    assert len(apps) == 7
+            if doc['kind'] == 'Application' and doc['metadata']['name'].startswith(
+                ('gpu-vault-', 'gpu-monitoring-vault-'))]
+    assert len(apps) == 13
     for application in apps:
         assert 'automated' not in application['spec'].get('syncPolicy', {})
         assert not application['metadata'].get('finalizers')
+        if application['metadata']['name'].startswith('gpu-monitoring-vault-'):
+            assert application['spec']['destination']['name'] == 'monitoring'
+            assert application['spec']['project'] == 'gpu-monitoring-vault'
+    remote_operator = next(a for a in apps if a['metadata']['name'] == 'gpu-monitoring-vault-operator')
+    assert remote_operator['spec']['sources'][0]['targetRevision'] == version
+    remote_values = yaml.safe_load((ROOT / 'monitoring/onprem/vault/operator/values.yaml').read_text())
+    assert remote_values['defaultVaultConnection']['enabled'] is False
     print(f'Vault CRD {count}개 공식 chart {version} schema 검증 및 수동 인계 계약 통과')
 
 

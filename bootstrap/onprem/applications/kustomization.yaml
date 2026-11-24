@@ -48,3 +48,10 @@ resources:
 - gpu-vault-cloudflare-dns.yaml
 - gpu-vault-worker-kubeconfigs.yaml
 - gpu-vault-ghcr-pull.yaml
+# 별도 monitoring 클러스터 VSO: 모두 수동 sync, Vault 값/인증 준비 후 인계.
+- gpu-monitoring-vault-operator.yaml
+- gpu-monitoring-vault-connections.yaml
+- gpu-monitoring-vault-alertmanager.yaml
+- gpu-monitoring-vault-grafana.yaml
+- gpu-monitoring-vault-postgres-exporter.yaml
+- gpu-monitoring-vault-ghcr-pull.yaml

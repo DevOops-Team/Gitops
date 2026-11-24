@@ -1,0 +1,4 @@
+# 별도 monitoring 클러스터에 설치. 관리 클러스터의 operator와 독립이다.
+# 서버는 기존 Vault VM, 여기에 Vault 서버/스토리지는 설치하지 않는다.
+defaultVaultConnection:
+  enabled: false

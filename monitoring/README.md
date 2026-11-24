@@ -7,7 +7,7 @@
 
 ## 실제 배포 위치
 
-분류기를 빼면 이 디렉토리에는 매니페스트를 두지 않는다. 모니터링 매니페스트 · 차트 values의 정본은 Monitoring 레포이고, 여기(Gitops)에는 그것을 가리키는 Application만 있다(ADR-21 모니터링 예외).
+분류기 overlay와 Vault 연동(`onprem/vault`)을 제외한 모니터링 워크로드 매니페스트·차트 values의 정본은 Monitoring 레포다(ADR-21). Vault 연동은 기존 워크로드를 바꾸지 않고 Secret 공급만 담당한다.
 
 | 층 | 클러스터 | Application (`bootstrap/onprem/applications/`) | project | sync |
 |---|---|---|---|---|
@@ -17,5 +17,5 @@
 | 분류기 | 모니터링 클러스터 | `gpu-monitoring-classifier` → 이 레포 `monitoring/onprem/classifier`(base는 Monitoring `deploy/classifier/base`를 릴리스 태그로 참조, 이미지 태그도 여기서 고정) | `gpu-monitoring` | automated |
 
 - 모니터링 클러스터 등록은 IaC `ansible/playbooks/bootstrap/register-monitoring-cluster.yml`(GPU-177)
-- Secret(S3 인증서 · Slack · Grafana)은 Git에 없다. Monitoring 레포 `scripts/create-secrets.sh`로 넣는다
+- Secret 값은 Git에 없다. Slack/Grafana/Postgres exporter/GHCR의 Vault 인계 매니페스트와 수동 준비 절차는 [onprem/vault/README.md](onprem/vault/README.md)를 따른다. 인계 전에는 기존 생성 도구를 사용하고, 인계 뒤 `create-secrets.sh`로 덮어쓰지 않는다. 실제 인계는 별도 확인이 필요하다.
 - 관리 클러스터가 죽어 Argo CD를 못 쓸 때는 Monitoring 레포 `scripts/deploy-k8s.sh`(비상용). 차트 버전은 Application의 `targetRevision`과 Monitoring `deploy/versions.env` 두 곳을 같이 고친다

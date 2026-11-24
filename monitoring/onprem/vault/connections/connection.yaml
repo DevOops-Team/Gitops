@@ -1,0 +1,10 @@
+# monitoring/vault-vm-ca (ca.crt)는 외부 공개 CA 파일에서 사전 등록한다.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault-vm
+  namespace: monitoring
+spec:
+  address: https://172.30.0.81:8200
+  skipTLSVerify: false
+  caCertSecretRef: vault-vm-ca
