@@ -13,5 +13,5 @@ spec:
           valueFrom:
             secretKeyRef:
               name: backend-recovery-api
-              key: token
+              key: RECOVERY_API_TOKEN
               optional: true # 미준비 시 Backend의 internal API만 503, 기존 웹 API는 유지
