@@ -45,7 +45,7 @@ def main():
                     schemas[(crd['spec']['names']['kind'], entry['name'])] = entry['schema']['openAPIV3Schema']
 
     docs = []
-    for path in ['common', 'backend-db', 'collector-db', 'cloudflare-dns']:
+    for path in ['common', 'backend-db', 'collector-db', 'cloudflare-dns', 'worker-kubeconfigs', 'ghcr-pull']:
         docs.extend(build(f'onprem/platform/vault/{path}'))
     count = 0
     for doc in docs:
@@ -72,10 +72,35 @@ def main():
     issuer = yaml.safe_load((ROOT / 'onprem/platform/cert-manager/issuer/clusterissuer.yaml').read_text())
     token_ref = issuer['spec']['acme']['solvers'][0]['dns01']['cloudflare']['apiTokenSecretRef']
     assert token_ref == {'name': cloudflare[0]['spec']['destination']['name'], 'key': 'api-token'}
-    assert count == 9
+    expected = {'eks-a-kubeconfig', 'eks-a-relocator-kubeconfig',
+                'eks-b-kubeconfig', 'eks-b-relocator-kubeconfig'}
+    worker_secrets = [d for d in docs if d['kind'] == 'VaultStaticSecret'
+                      and d['metadata']['namespace'] == 'kueue-system']
+    assert {d['spec']['destination']['name'] for d in worker_secrets} == expected
+    assert len(worker_secrets) == 4
+    for d in worker_secrets:
+        name = d['spec']['destination']['name']
+        assert d['spec']['vaultAuthRef'] == name + '-sync'
+        assert d['spec']['refreshAfter'] == '60s'
+    ghcr = [d for d in docs if d['kind'] == 'VaultStaticSecret'
+            and d['spec']['destination']['name'] == 'ghcr-pull']
+    assert len(ghcr) == 2
+    assert {d['metadata']['namespace'] for d in ghcr} == {'platform', 'data-system'}
+    for d in ghcr:
+        assert d['spec']['vaultAuthRef'] == 'ghcr-pull-sync'
+        assert 'type' not in d['spec']['destination']  # create:false로 기존 타입 유지
+        assert not d['spec']['destination'].get('overwrite', False)
+    auths = [d for d in docs if d['kind'] == 'VaultAuth'
+             and d['metadata']['name'] == 'ghcr-pull-sync']
+    assert len(auths) == 2
+    assert {d['metadata']['namespace'] for d in auths} == {'platform', 'data-system'}
+    for d in auths:
+        assert d['spec']['vaultConnectionRef'] == 'vault-vm'
+        assert d['spec']['kubernetes']['role'] == d['metadata']['namespace'] + '-ghcr-pull-sync'
+    assert count == 22
     apps = [doc for doc in build('bootstrap/onprem/applications')
             if doc['kind'] == 'Application' and doc['metadata']['name'].startswith('gpu-vault-')]
-    assert len(apps) == 5
+    assert len(apps) == 7
     for application in apps:
         assert 'automated' not in application['spec'].get('syncPolicy', {})
         assert not application['metadata'].get('finalizers')
