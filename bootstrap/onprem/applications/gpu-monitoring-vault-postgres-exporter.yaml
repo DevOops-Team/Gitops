@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-monitoring-vault-postgres-exporter
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  project: gpu-monitoring-vault
+  destination:
+    name: monitoring
+    namespace: monitoring
+  source:
+    repoURL: https://github.com/DevOops-Team/Gitops.git
+    targetRevision: main
+    path: monitoring/onprem/vault/postgres-exporter
+  # 사전 값 비교 후 수동 sync. 자동 prune/강제 교체/앱 재시작 없음.
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=false
+    - FailOnSharedResource=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
