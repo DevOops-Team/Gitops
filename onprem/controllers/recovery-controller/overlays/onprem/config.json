@@ -19,8 +19,8 @@
     "enabled": false
   },
   "fencing_progress_input": {
-    "enabled": false,
-    "producer_contract_confirmed": false,
+    "enabled": true,
+    "producer_contract_confirmed": true,
     "attribute": "recovery_training_evidence"
   },
   "retry_policy": {
