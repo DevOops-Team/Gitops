@@ -3,7 +3,7 @@
 ## 이 변경에서 준비한 것
 
 - Backend `RECOVERY_API_TOKEN`과 controller `BACKEND_RECOVERY_API_TOKEN`이 같은
-  `platform/backend-recovery-api` Secret의 `token` 키를 참조한다. 실제 값은 Git에 없다.
+  `platform/backend-recovery-api` Secret의 `RECOVERY_API_TOKEN` 키를 참조한다. 실제 값은 Git에 없다.
 - controller config의 HTTPS origin은 `https://backend-recovery.platform.svc:8443`이다.
   `backend_metadata.enabled=false`로 준비한다. Backend의 실제 PlacementSource 연결이 선행돼야 한다.
 - cert-manager로 내부 CA와 서비스 DNS SAN 인증서를 발급하는 **수동** 앱
@@ -38,7 +38,7 @@ Backend 코드 계약은 K8s `recovery-controller/docs/backend-metadata-api.md`�
 2. `backend-recovery-api`가 기존에 있으면 관리자·내용을 먼저 확인한다. 새 토큰으로 자동 덮어쓰지 않는다.
    없으면 충분히 긴 임의 토큰을 보호된 파일로 생성하고 **같은 Secret 하나**에 저장한다.
    예: `umask 077` 환경에서 `openssl rand -base64 48 | tr -d '\r\n'` 출력을 보호된 임시 파일에 저장한 후
-   `kubectl --context <관리-context> -n platform create secret generic backend-recovery-api --from-file=token=<파일>`.
+   `kubectl --context <관리-context> -n platform create secret generic backend-recovery-api --from-file=RECOVERY_API_TOKEN=<파일>`.
    토큰에 CR/LF를 넣지 않는다(컨트롤러가 거부한다). 토큰 문자열을 셸 인자·로그·Git·DM으로 전달하지 않는다. Vault로 공급하려면 동일 key를 유지하고
    별도의 KV/VSO 인계 절차로 연결한다(이 PR이 Vault에 새 값을 쓰지는 않음).
    optional 환경변수는 Secret이 나중에 생겨도 실행 중인 프로세스에 자동 반영되지 않는다.
