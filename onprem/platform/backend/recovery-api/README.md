@@ -15,7 +15,10 @@
   init 컨테이너가 기존 시스템 CA + 내부 CA를 합쳐 Python SSL_CERT_FILE을 준비한다.
   AWS_CA_BUNDLE/기존 AWS 인증은 변경하지 않는다.
 
-기본 gpu-backend Application path는 기존 `overlays/onprem`이다. TLS overlay는 아직 활성화하지 않는다.
+gpu-backend Application path는 `overlays/onprem-recovery-api`다 (2026-11-24 전환, 인증서 Ready 확인 뒤).
+이 overlay는 `../onprem`을 그대로 포함하므로 봇이 갱신하는 이미지 digest와 기존 HTTP 8000은 그대로다.
+nginx는 읽기 전용 루트라 client_body · proxy · fastcgi · uwsgi · scgi 임시 경로를 모두 `/tmp`(emptyDir)에 둔다.
+하나라도 빠지면 `/var/cache/nginx/...` mkdir 실패로 사이드카가 기동하지 않는다.
 토큰/CA 참조는 optional로 준비하므로 미등록 상태에서도 기존 앱이 Secret 누락으로 기동 불가해지지 않는다.
 이것은 인증 우회가 아니다: Backend 토큰 미설정이면 API 503, controller 토큰 누락이면 조회 거부다.
 이번 main 반영만으로 HTTPS 서비스나 API 조회가 활성화되지 않는다.
