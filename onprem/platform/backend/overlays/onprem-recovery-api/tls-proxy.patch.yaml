@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: platform
+spec:
+  template:
+    spec:
+      containers:
+      - name: recovery-tls
+        # Docker Official Image stable-alpine manifest digest 확인: 2026-11-24.
+        image: nginx:stable-alpine@sha256:8eb2b5540eae779603cc3db84b3986a15ecb5308b54303146eee9837c137b51a
+        command: [/bin/sh, /etc/recovery-proxy/run.sh]
+        ports:
+        - {name: recovery-https, containerPort: 8443}
+        securityContext:
+          runAsUser: 101
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: recovery-tls, mountPath: /etc/recovery-tls, readOnly: true}
+        - {name: recovery-proxy-config, mountPath: /etc/recovery-proxy, readOnly: true}
+        - {name: recovery-proxy-tmp, mountPath: /tmp}
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {cpu: 100m, memory: 64Mi}
+        readinessProbe:
+          tcpSocket: {port: recovery-https}
+          periodSeconds: 5
+        livenessProbe:
+          tcpSocket: {port: recovery-https}
+          periodSeconds: 10
+      volumes:
+      - name: recovery-tls
+        secret:
+          secretName: backend-recovery-tls
+          defaultMode: 0440
+          items:
+          - {key: tls.crt, path: tls.crt}
+          - {key: tls.key, path: tls.key}
+      - name: recovery-proxy-config
+        configMap:
+          name: backend-recovery-proxy
+      - name: recovery-proxy-tmp
+        emptyDir: {sizeLimit: 32Mi}
