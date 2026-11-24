@@ -19,3 +19,13 @@ patches:
   target:
     kind: Deployment
     name: classifier
+# GPU 노드 소실 신호도 받는다(GPU-220, Monitoring v1.32.0). 코드 기본값은 xid,pod_exit.
+# 복구 컨트롤러가 실행 모드라, GPU 노드가 1분 넘게 NotReady이거나 사라지면 그 노드 작업이 실제로 옮겨진다(isolate_migrate).
+# 사이트 신호(초안 #96)를 켤 때는 이 값에 site를 더한다(xid,pod_exit,node_lost,site)
+- patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/env/-
+      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,node_lost"}
+  target:
+    kind: Deployment
+    name: classifier
