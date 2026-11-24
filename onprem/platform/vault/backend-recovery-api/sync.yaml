@@ -1,0 +1,16 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: backend-recovery-api
+  namespace: platform
+spec:
+  vaultAuthRef: backend-recovery-api-auth
+  mount: devoops
+  type: kv-v2
+  path: onprem/platform/backend-recovery-api
+  refreshAfter: 60s
+  destination:
+    create: false
+    name: backend-recovery-api
+    transformation:
+      excludeRaw: true

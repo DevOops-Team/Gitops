@@ -54,7 +54,7 @@ def main():
         value = next(v for v in container['env'] if v['name'] == env)
         assert 'value' not in value
         references.append(value['valueFrom']['secretKeyRef'])
-    assert references[0] == references[1] == {'name':'backend-recovery-api','key':'token','optional':True}
+    assert references[0] == references[1] == {'name':'backend-recovery-api','key':'RECOVERY_API_TOKEN','optional':True}
     init = next(c for c in control_pod['initContainers'] if c['name'] == 'backend-api-trust')
     app = next(c for c in control_pod['containers'] if c['name'] == 'controller')
     assert init['image'] == app['image']

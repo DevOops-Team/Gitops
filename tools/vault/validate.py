@@ -45,7 +45,7 @@ def main():
                     schemas[(crd['spec']['names']['kind'], entry['name'])] = entry['schema']['openAPIV3Schema']
 
     docs = []
-    for path in ['common', 'backend-db', 'collector-db', 'cloudflare-dns', 'worker-kubeconfigs', 'ghcr-pull']:
+    for path in ['common', 'backend-db', 'collector-db', 'cloudflare-dns', 'worker-kubeconfigs', 'ghcr-pull', 'backend-recovery-api']:
         docs.extend(build(f'onprem/platform/vault/{path}'))
     for path in ['connections', 'alertmanager', 'grafana', 'postgres-exporter', 'ghcr-pull']:
         docs.extend(build(f'monitoring/onprem/vault/{path}'))
@@ -67,6 +67,12 @@ def main():
         assert doc['kind'] not in ['Secret', 'Deployment', 'StatefulSet']
         if doc['kind'] == 'ClusterRole':
             assert doc['rules'] == [{'apiGroups': ['authentication.k8s.io'], 'resources': ['tokenreviews'], 'verbs': ['create']}]
+    recovery = [d for d in docs if d['kind'] == 'VaultStaticSecret'
+                and d['metadata']['name'] == 'backend-recovery-api']
+    assert len(recovery) == 1
+    assert recovery[0]['metadata']['namespace'] == 'platform'
+    assert recovery[0]['spec']['vaultAuthRef'] == 'backend-recovery-api-auth'
+    assert recovery[0]['spec']['refreshAfter'] == '60s'
     cloudflare = [doc for doc in docs if doc['kind'] == 'VaultStaticSecret'
                   and doc['metadata']['name'] == 'cloudflare-dns-sync']
     assert len(cloudflare) == 1
@@ -119,11 +125,11 @@ def main():
     assert {d['name'] for d in project['spec']['destinations']} == {'monitoring'}
     assert {d['namespace'] for d in project['spec']['destinations']} == {
         'monitoring', 'vault-secrets-operator-system'}
-    assert count == 31
+    assert count == 33
     apps = [doc for doc in build('bootstrap/onprem/applications')
             if doc['kind'] == 'Application' and doc['metadata']['name'].startswith(
                 ('gpu-vault-', 'gpu-monitoring-vault-'))]
-    assert len(apps) == 13
+    assert len(apps) == 14
     for application in apps:
         assert 'automated' not in application['spec'].get('syncPolicy', {})
         assert not application['metadata'].get('finalizers')

@@ -44,7 +44,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: backend-recovery-api
-              key: token
+              key: RECOVERY_API_TOKEN
               optional: true # disabled에서 기존 복구/지표/리더 동작 유지
         - name: SSL_CERT_FILE
           value: /var/run/backend-api-trust/ca-bundle.crt
