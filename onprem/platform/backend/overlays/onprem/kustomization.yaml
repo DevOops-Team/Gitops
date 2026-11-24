@@ -2,20 +2,22 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../../base
+patches:
+- path: recovery-token.patch.yaml
 # aws-signing-helper는 사람이 올린다 (helper 버전은 배포 쪽에서 관리, K8s aws-signing-helper/README.md, GPU-185)
 images:
 - digest: sha256:527d6ffc3a8c1fde7de34273890f3cc16b83f23f8e5e881485b479c696352203
   name: ghcr.io/devoops-team/aws-signing-helper
   newName: ghcr.io/devoops-team/aws-signing-helper
   newTag: 1.1.0
-- digest: sha256:78b326d67397827e4661bf60d3bb09d6b9f84b6198a871c42ad66a6f70a01f52
+- digest: sha256:433ea928d752d86cdb5a2f0df16b814c8e9febaf7edadc93d4be5f5f83696a5e
   name: ghcr.io/devoops-team/backend
   newName: ghcr.io/devoops-team/backend
-  newTag: 1.9.0
-- digest: sha256:d56fe3b0ca31a840d0b8de2cc0f828d09aa6c5a75890babf65d208ec76e2c39b
+  newTag: 1.11.0
+- digest: sha256:c233e4da02e55859f3daa5e165a1f141f2650d828be887d3d6a434126280161c
   name: ghcr.io/devoops-team/checkpoint
   newName: ghcr.io/devoops-team/checkpoint
-  newTag: 1.13.0
+  newTag: 1.13.1
 - digest: sha256:883e193a01db6e860b525637c3bee306f0d8edc8e0c42d49d075ff635f54a63c
   name: ghcr.io/devoops-team/trainer
   newName: ghcr.io/devoops-team/trainer

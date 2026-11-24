@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-recovery
+  namespace: platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: backend
+  ports:
+  - name: recovery-https
+    port: 8443
+    targetPort: recovery-https

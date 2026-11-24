@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recovery-controller
+  namespace: platform
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: backend-api-trust
+        # 기존 controller 이미지/version/digest를 그대로 사용한다.
+        image: ghcr.io/devoops-team/recovery-controller
+        command:
+        - python
+        - -c
+        - |
+          import pathlib, ssl
+          public = ssl.get_default_verify_paths().cafile
+          if not public:
+              raise SystemExit("system trust bundle missing")
+          bundle = pathlib.Path(public).read_bytes()
+          internal = pathlib.Path('/var/run/backend-api-ca/ca.crt')
+          if internal.exists():
+              bundle += b'\n' + internal.read_bytes()
+          target = pathlib.Path('/var/run/backend-api-trust/ca-bundle.crt')
+          target.write_bytes(bundle)
+          ssl.create_default_context(cafile=str(target))
+        securityContext:
+          runAsUser: 10001
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: backend-api-ca, mountPath: /var/run/backend-api-ca, readOnly: true}
+        - {name: backend-api-trust, mountPath: /var/run/backend-api-trust}
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {memory: 64Mi}
+      containers:
+      - name: controller
+        env:
+        - name: BACKEND_RECOVERY_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: backend-recovery-api
+              key: token
+              optional: true # disabled에서 기존 복구/지표/리더 동작 유지
+        - name: SSL_CERT_FILE
+          value: /var/run/backend-api-trust/ca-bundle.crt
+        volumeMounts:
+        - {name: backend-api-trust, mountPath: /var/run/backend-api-trust, readOnly: true}
+      volumes:
+      - name: backend-api-ca
+        secret:
+          secretName: backend-recovery-root-ca
+          optional: true # 인증서 앱 수동 Sync 전에도 기동 가능
+          items:
+          - {key: tls.crt, path: ca.crt} # 공개 CA만 투영. tls.key는 컨트롤러에 노출하지 않는다.
+      - name: backend-api-trust
+        emptyDir: {sizeLimit: 4Mi}
