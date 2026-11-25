@@ -1,4 +1,6 @@
 # 재배치 요청: 장애복구 파트(복구 컨트롤러)가 DynamoDB 세대 +1(GENERATION_ADVANCED)을 한 뒤 만들고 재배치 실행기가 처리한다.
+# ADR-50: relocator는 S3 · DynamoDB에 가지 않는다. 입력은 spec(원본 JobSet · 새 세대 · 종료 마감), 결과는 status.recoveryProgress.
+#   복구 컨트롤러 -> relocator 신호는 RR 주석 devoops/recovery-stop-recorded · devoops/recovery-cancel (계약: K8s scheduling/relocator/RECOVERY_CONTRACT.md)
 # 정책 이름(ours / naive / hyperpod)은 모른다. "무엇을 할지(action)"만 받는다.
 # 요청은 학습 잡과 같은 training 네임스페이스에 둔다 (11/05 K8s 아키텍처). 장애복구 파트와 최종 확인 필요
 apiVersion: apiextensions.k8s.io/v1
@@ -34,7 +36,7 @@ spec:
         properties:
           spec:
             type: object
-            required: [requestId, jobRef, action]
+            required: [requestId, jobRef, action]   # toGeneration · jobSet은 복구 컨트롤러 전환 뒤 필수로 (ADR-50)
             x-kubernetes-validations:
             - rule: "self == oldSelf"
               message: "spec은 만든 뒤 바꿀 수 없음. 새 요청을 만들 것"
@@ -63,13 +65,24 @@ spec:
                 type: string
                 description: 기록용 원인 분류
                 enum: [hardware, software, spot, straggler, sdc, az, unknown]
+              toGeneration:
+                type: integer
+                minimum: 2
+                description: 새 세대 = jobRef 옛 세대 + 1 (펜싱 기록 recovery_to_gen)
+              stopDeadline:
+                x-kubernetes-int-or-string: true
+                description: 옛 실행 종료 마감 (RFC3339 시간대 포함 또는 epoch 초) = 펜싱 기록 stop_wait_deadline. 없으면 요청 생성 + 15분
+              jobSet:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+                description: 복구 컨트롤러가 S3 code/{job_id}/jobset.json에서 읽고 해시를 대조한 원본 JobSet
           status:
             type: object
             x-kubernetes-preserve-unknown-fields: true
             properties:
               phase:
                 type: string
-                description: "(Pending = 세대 +1 대기) -> Accepted -> Executing (-> WaitingForStop -> Held) (-> AdmitDelayed) -> Done / Failed / Duplicate"
+                description: "Accepted -> Executing (-> WaitingForStop -> Held) (-> AdmitDelayed) -> Done / Failed / Duplicate / Cancelled (복구 컨트롤러 취소)"
               message: {type: string}
               sourceCluster: {type: string}
               targetCluster: {type: string}
@@ -84,6 +97,10 @@ spec:
               toGeneration: {type: integer}
               oldExclude: {type: string}
               gpus: {type: integer, description: 옛 잡의 GPU 수 (기록용)}
+              recoveryProgress:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+                description: 복구 컨트롤러가 펜싱 표로 옮기는 실행 결과 (OLD_RUN_STOPPED + 종료 증거 / NEW_RUN_SUBMITTED + 관리 클러스터 새 JobSet 이름 · UID)
               seenClusters:
                 type: array
                 items: {type: string}
