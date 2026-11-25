@@ -44,7 +44,9 @@ roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: recovery-contro
 subjects:
 - {kind: ServiceAccount, name: recovery-controller, namespace: platform}
 ---
-# 재배치 요청은 학습 네임스페이스에 만들기 · 읽기만. 노드 변경 · 잡 재제출은 relocator 몫
+# 재배치 요청은 학습 네임스페이스에 만들기 · 읽기 · 주석 붙이기. 노드 변경 · 잡 재제출은 relocator 몫
+# patch: 제어 주석 devoops/recovery-stop-recorded · devoops/recovery-cancel (ADR-50). spec은 CRD가 바꾸지 못하게 막는다
+# list · watch: relocator가 쓴 status.recoveryProgress를 보고 펜싱 표에 옮긴다
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -53,7 +55,7 @@ metadata:
 rules:
 - apiGroups: [scheduling.devoops.site]
   resources: [relocationrequests]
-  verbs: [create, get]
+  verbs: [create, get, list, watch, patch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
