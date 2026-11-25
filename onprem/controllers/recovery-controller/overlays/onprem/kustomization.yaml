@@ -19,7 +19,7 @@ patches:
       template:
         metadata:
           annotations:
-            devoops/config-sha256: e64ab9d2c5660cd1563de0bab611dbfa91654711a67adac91b9e8ed099299407
+            devoops/config-sha256: 5184822899c528ed59e3a57a382e0b028ad47e407fc4163f0c33f48908570bb2
   target:
     group: apps
     kind: Deployment
