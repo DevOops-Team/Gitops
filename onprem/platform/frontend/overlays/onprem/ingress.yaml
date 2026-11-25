@@ -3,6 +3,9 @@ kind: Ingress
 metadata:
   name: frontend
   namespace: platform
+  # 공인 경로 (GPU-115): Cloudflare(devoops.site, 프록시) → 112.218.95.58:30600~30609
+  # → 192.168.200.101~110 → pfSense → VIP 172.30.0.125:443 (Traefik).
+  # Host가 devoops.site인 요청만 받는다. IP 직접 접속이나 다른 Host는 Traefik 404.
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: 'true'
@@ -15,16 +18,6 @@ spec:
   rules:
   - host: devoops.site
     http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend
-            port:
-              number: 3000
-  # 임시: 공인 DNS 전까지 Tailscale에서 https://172.30.0.125 (IP) 로 접속 (Host 무관, 인증서 경고는 감수)
-  - http:
       paths:
       - path: /
         pathType: Prefix
