@@ -18,6 +18,10 @@
   "watchdog": {
     "enabled": false
   },
+  "relocation_status_input": {
+    "enabled": true,
+    "producer_contract_confirmed": true
+  },
   "fencing_progress_input": {
     "enabled": true,
     "producer_contract_confirmed": true,
@@ -38,7 +42,8 @@
     "max_age_seconds": 300,
     "future_skew_seconds": 30,
     "placement_producers": [
-      "scheduling"
+      "scheduling",
+      "job-watcher"
     ],
     "progress_producers": [
       "training"
