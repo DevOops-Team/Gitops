@@ -36,7 +36,7 @@ images:
   name: ghcr.io/devoops-team/aws-signing-helper
   newName: ghcr.io/devoops-team/aws-signing-helper
   newTag: 1.1.0
-- digest: sha256:76f236b1688d8cf1c51593106ff1c369bb0a03e9cf95bfdf9bb5a5db695ee620
+- digest: sha256:3bb25517dae929140b8b701d7bf2ef7e637e4cbdecfd3c6ee7e1bf0468721f54
   name: ghcr.io/devoops-team/recovery-controller
   newName: ghcr.io/devoops-team/recovery-controller
-  newTag: 1.8.0
+  newTag: 1.9.1
