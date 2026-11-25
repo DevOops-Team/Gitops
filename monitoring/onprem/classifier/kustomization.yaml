@@ -19,13 +19,15 @@ patches:
   target:
     kind: Deployment
     name: classifier
-# GPU 노드 소실 신호도 받는다(GPU-220, Monitoring v1.32.0). 코드 기본값은 xid,pod_exit.
-# 복구 컨트롤러가 실행 모드라, GPU 노드가 1분 넘게 NotReady이거나 사라지면 그 노드 작업이 실제로 옮겨진다(isolate_migrate).
-# 사이트 신호(초안 #96)를 켤 때는 이 값에 site를 더한다(xid,pod_exit,node_lost,site)
+# GPU 노드 소실 · 사이트 신호도 받는다(GPU-220). 코드 기본값은 xid,pod_exit.
+# 복구 컨트롤러가 실행 모드라 실제로 옮겨진다:
+#  node_lost(Monitoring v1.32.0) = GPU 노드가 1분 넘게 NotReady이거나 사라지면 그 노드 작업을 isolate_migrate
+#  site(11/25) = 펜싱 안 된 EKS의 지표가 2분 넘게 안 오면 그 클러스터 작업마다 fence_evacuate. Monitoring Alertmanager 라우트에도 site가 있어야 받는다.
+#  EKS를 끌 때는 반드시 fence부터(K8s scheduling/ops/README.md, eks_gate.py fence). 빼먹으면 실제 대피가 시작된다
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/env/-
-      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,node_lost"}
+      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,node_lost,site"}
   target:
     kind: Deployment
     name: classifier
