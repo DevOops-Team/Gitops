@@ -27,6 +27,4 @@ spec:
   source:
     repoURL: https://github.com/DevOops-Team/Gitops.git
     targetRevision: main
-    # 복구 조회 API 내부 HTTPS (GPU-119): ../onprem + nginx TLS 사이드카 · Service backend-recovery:8443.
-    # 되돌릴 때는 overlays/onprem으로 (onprem/platform/backend/recovery-api/README.md 롤백)
-    path: onprem/platform/backend/overlays/onprem-recovery-api
+    path: onprem/platform/backend/overlays/onprem

@@ -48,13 +48,5 @@
     "progress_producers": [
       "training"
     ]
-  },
-  "backend_metadata": {
-    "enabled": false,
-    "base_url": "https://backend-recovery.platform.svc:8443",
-    "token_env": "BACKEND_RECOVERY_API_TOKEN",
-    "timeout_seconds": 5,
-    "max_age_seconds": 300,
-    "future_skew_seconds": 30
   }
 }

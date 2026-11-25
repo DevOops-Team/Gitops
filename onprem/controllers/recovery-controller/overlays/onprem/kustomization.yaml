@@ -9,7 +9,6 @@ configMapGenerator:
   name: recovery-controller-config
   namespace: platform
 patches:
-- path: backend-api.patch.yaml
 - patch: |-
     apiVersion: apps/v1
     kind: Deployment
@@ -19,7 +18,7 @@ patches:
       template:
         metadata:
           annotations:
-            devoops/config-sha256: 5184822899c528ed59e3a57a382e0b028ad47e407fc4163f0c33f48908570bb2
+            devoops/config-sha256: 6e0e5f179a95fd7ad549a7fcf8c7e328058bdcb753d6ae3f0fd265b1188ea062
   target:
     group: apps
     kind: Deployment

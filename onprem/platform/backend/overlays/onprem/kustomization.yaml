@@ -2,8 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - ../../base
-patches:
-- path: recovery-token.patch.yaml
 # aws-signing-helper는 사람이 올린다 (helper 버전은 배포 쪽에서 관리, K8s aws-signing-helper/README.md, GPU-185)
 images:
 - digest: sha256:527d6ffc3a8c1fde7de34273890f3cc16b83f23f8e5e881485b479c696352203
