@@ -17,6 +17,8 @@ resources:
 - gpu-multikueue-queues.yaml
 - gpu-scheduling-common.yaml
 - gpu-frontend.yaml
+- project-argocd-ingress.yaml  # AppProject gpu-argocd-ingress (argocd 네임스페이스 Ingress · Certificate만)
+- gpu-argocd-ingress.yaml      # https://argocd.devoops.site, project gpu-argocd-ingress (GPU-273)
 - gpu-backend.yaml
 - gpu-backend-recovery-tls.yaml
 - gpu-dispatcher.yaml

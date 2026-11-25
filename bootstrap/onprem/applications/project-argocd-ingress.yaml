@@ -1,0 +1,21 @@
+# Argo CD 대시보드 공인 진입 전용 (GPU-273). argocd 네임스페이스에는 Ingress · 인증서만 만들 수 있다.
+# gpu-platform에 argocd 네임스페이스를 열면 그 프로젝트의 모든 앱이 Argo CD 자체를 바꿀 수 있어 따로 둔다.
+# gpu-root(applications/)가 관리해 머지만으로 반영된다 (다른 AppProject는 bootstrap/onprem에서 손으로 적용, GPU-143).
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gpu-argocd-ingress
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '-30'   # Application gpu-argocd-ingress보다 먼저
+spec:
+  description: Public ingress (Ingress · Certificate) for the Argo CD dashboard
+  sourceRepos:
+  - https://github.com/DevOops-Team/Gitops.git
+  destinations:
+  - server: https://kubernetes.default.svc
+    namespace: argocd
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+  - {group: networking.k8s.io, kind: Ingress}
+  - {group: cert-manager.io, kind: Certificate}
