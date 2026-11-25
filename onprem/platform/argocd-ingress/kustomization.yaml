@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Argo CD 대시보드 공인 진입 (GPU-273): https://argocd.devoops.site
+# Cloudflare(argocd.devoops.site, 프록시 + Origin Rule) → 공인 경로 → VIP 172.30.0.125:443 (Traefik, Host로 구분)
+# Argo CD 자체는 IaC Ansible(install-argocd)이 설치한다. 여기는 Ingress · 인증서만 둔다.
+# argocd-server가 HTTP로 떠 있어야 한다: IaC argocd-bootstrap server.insecure (꺼져 있으면 무한 리다이렉트)
+resources:
+- certificate.yaml
+- ingress.yaml

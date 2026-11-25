@@ -16,8 +16,10 @@
 | 브로커 | `172.30.0.40:9092,172.30.0.41:9092,172.30.0.42:9092` |
 | 입력 / 출력 | `gpu.fault` + `job.lifecycle` / `recovery.action` |
 | consumer group / 학습 namespace | `recovery-controller-v1` / `training` |
+| relocator 결과 → 펜싱 (ADR-50, GPU-276) | `relocation_status_input.enabled: true` · `producer_contract_confirmed: true` (relocator 2.0.0은 펜싱을 쓰지 않음) |
+| 배치 증거 생산자 | `evidence_policy.placement_producers: [scheduling, job-watcher]` — 복구 세대의 `job.lifecycle` `job.placement`를 완료 증거로 받음 |
 
-`job.lifecycle`은 코드에서 고정 구독한다. Kafka PLAINTEXT 구성에서는 인증 Secret이 없어도 되며, 인증 도입 시 기존 `recovery-controller-credentials`의 `KAFKA_CLIENT_CONFIG_JSON`을 사용한다. 기존 Roles Anywhere 인증 사이드카·Secret, RECOVERY_POD_UID, Lease·RelocationRequest RBAC와 이미지 tag/digest는 유지한다.
+`job.lifecycle`은 코드에서 고정 구독한다. Kafka PLAINTEXT 구성에서는 생산자 인증·토픽 쓰기 제한이 없어 `job-watcher` 배치 증거도 출처를 검증하지 못한다(브로커에 닿는 누구나 `job.lifecycle`에 쓸 수 있음). 인증 Secret이 없어도 되며, 인증 도입 시 기존 `recovery-controller-credentials`의 `KAFKA_CLIENT_CONFIG_JSON`을 사용한다. 기존 Roles Anywhere 인증 사이드카·Secret, RECOVERY_POD_UID, Lease·RelocationRequest RBAC와 이미지 tag/digest는 유지한다.
 
 설정 변경 시 Pod가 재시작해 새 파일을 읽도록 overlay의 `devoops/config-sha256`을 설정한다. config.json 수정 시 아래 SHA-256으로 annotation도 갱신한다.
 
