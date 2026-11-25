@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
 - ../../base
 images:
-- digest: sha256:5179da4298fc3f68a435aebbc0f61bdf7e833c7743e2960eae14845211bc9b79
+- digest: sha256:78d0d66683aff8a07e2de7aaa007a4ec242d24b668fd95e55366fad999ea6f28
   name: ghcr.io/devoops-team/collector
   newName: ghcr.io/devoops-team/collector
-  newTag: 1.12.0
+  newTag: 1.14.0
