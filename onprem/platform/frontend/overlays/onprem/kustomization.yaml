@@ -5,7 +5,7 @@ resources:
 - certificate.yaml
 - ingress.yaml
 images:
-- digest: sha256:ebd21901cc60cb4465cfb9d9d45e6d3f0e820c638336573e93ee4492fc06509c
+- digest: sha256:8709e2375e86c02e47ed9ece4cac474845114e3771f9b5d6be1bad7074120e46
   name: ghcr.io/devoops-team/frontend
   newName: ghcr.io/devoops-team/frontend
-  newTag: 1.7.0
+  newTag: 1.8.0
