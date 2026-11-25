@@ -79,7 +79,11 @@ spec:
         env:
         - name: POD_NAME         # Lease holderIdentity
           valueFrom: {fieldRef: {fieldPath: metadata.name}}
-        # S3 원본 · 펜싱 DynamoDB는 복구 컨트롤러가 읽고 쓴다 (ADR-50). relocator의 AWS 접근은 EC2 종료 증거뿐
+        # relocator 1.x용. 2.0.0(ADR-50, K8s #49)부터는 쓰지 않으므로 그 배포 뒤에 지운다
+        - {name: RECOVERY_STORE, value: aws}                 # 복구 원본 S3 code/{job_id}/jobset.json · 펜싱 DynamoDB
+        - {name: FENCING_TABLE, value: devoops-prod-fencing}
+        - name: CKPT_BUCKET      # 버킷 이름에 계정 ID가 있어 Secret에
+          valueFrom: {secretKeyRef: {name: relocator-aws, key: ckpt_bucket}}
         - {name: AWS_REGION, value: us-east-2}
         - {name: AWS_EC2_METADATA_SERVICE_ENDPOINT, value: "http://127.0.0.1:9911/"}   # 끝의 / 필수
         # 워커 API가 끊겼을 때 EC2 상태를 옛 실행 종료 증거로 쓴다 (ec2_evidence.py). IAM은 DescribeInstances까지 있다.
