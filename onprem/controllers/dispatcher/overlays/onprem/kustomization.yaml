@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
 - ../../base
 images:
-- digest: sha256:8d25cf6796f06f64ea08b07a5a9bfe8ed04b0b41199c99430100e01813699517
+- digest: sha256:39bc69cd2402c813bb11fe227d99c500baf691d9334cacd149c135987b93ad65
   name: ghcr.io/devoops-team/dispatcher
   newName: ghcr.io/devoops-team/dispatcher
-  newTag: 2.3.0
+  newTag: 2.4.0
