@@ -4,12 +4,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: monitoring
 resources:
-- https://github.com/DevOops-Team/Monitoring//deploy/classifier/base?ref=v1.39.0
+- https://github.com/DevOops-Team/Monitoring//deploy/classifier/base?ref=v1.47.0
 images:
-- digest: sha256:ae8cec126872e28f9ec9b3c904583fefcc31aff990f8e37dcf4bacc560943d1d
+- digest: sha256:f0434a84ee9309023fb9b36cc9aa9a9819c0eb487e2449f6fc75c1f4b408803b
   name: ghcr.io/devoops-team/classifier
   newName: ghcr.io/devoops-team/classifier
-  newTag: 1.39.0
+  newTag: 1.47.0
 # GHCR 패키지가 비공개라 pull secret이 필요하다. Secret ghcr-pull은 Git에 없다(관리 클러스터 platform의 것을 복사해 넣음, Monitoring deploy/README.md)
 # GPU 노드 소실 · 사이트 신호도 받는다(GPU-220). 코드 기본값은 xid,pod_exit. 복구 컨트롤러가 실행 모드라 실제로 옮겨진다:
 #  node_lost(Monitoring v1.32.0) = GPU 노드가 1분 넘게 NotReady이거나 사라지면 그 노드 작업을 isolate_migrate
@@ -28,7 +28,7 @@ patches:
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/env/-
-      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,node_lost,site,job_failed"}
+      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,node_lost,site,job_failed,straggler"}
   target:
     kind: Deployment
     name: classifier
