@@ -1,35 +1,6 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: backend
-  namespace: platform
-rules:
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: backend
-  namespace: platform
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: backend
-subjects:
-- kind: ServiceAccount
-  name: backend
-  namespace: platform
----
+# Backend가 학습 namespace에서 쓰는 리소스만 연다 (GPU-294).
+# Backend는 client-go dynamic client로 jobsets(생성 · 조회 · 삭제) · kueue workloads(조회) · events(조회)만 다룬다
+#   — Backend 레포 internal/repository/kube.go의 GVR. leases · localqueues · batch jobs · pods는 쓰지 않아 뺐다.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -52,15 +23,6 @@ rules:
   - kueue.x-k8s.io
   resources:
   - workloads
-  - localqueues
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - batch
-  resources:
-  - jobs
   verbs:
   - get
   - list
@@ -68,7 +30,6 @@ rules:
 - apiGroups:
   - ''
   resources:
-  - pods
   - events
   verbs:
   - get

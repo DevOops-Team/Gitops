@@ -40,6 +40,7 @@ jobs:
   plan:
     name: release notes
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read        # main push에서 머지 커밋의 PR 본문 조회
