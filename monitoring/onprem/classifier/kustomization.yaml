@@ -28,7 +28,7 @@ patches:
 - patch: |-
     - op: add
       path: /spec/template/spec/containers/0/env/-
-      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,node_lost,site,job_failed"}
+      value: {name: ENABLED_SIGNALS, value: "xid,pod_exit,node_lost,site,job_failed,straggler"}
   target:
     kind: Deployment
     name: classifier
