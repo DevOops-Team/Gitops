@@ -76,6 +76,18 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
                 description: 복구 컨트롤러가 S3 code/{job_id}/jobset.json에서 읽고 해시를 대조한 원본 JobSet
+              sourceCluster:
+                type: string
+                description: 옛 세대가 돌던 클러스터 (복구 컨트롤러가 정함, GPU-295). relocator는 조회하지 않고 이 값을 쓴다
+              nodes:
+                type: array
+                description: 옛 세대가 쓰던 노드 (복구 컨트롤러가 정함, GPU-295). restartInPlace면 relocator가 이 노드 · sourceCluster에 고정해서 재제출 (GPU-280)
+                items:
+                  type: object
+                  required: [name]
+                  properties:
+                    name: {type: string}
+                    instanceId: {type: string, description: EC2 인스턴스 ID. 모르면 생략}
           status:
             type: object
             x-kubernetes-preserve-unknown-fields: true
@@ -105,3 +117,7 @@ spec:
                 type: array
                 items: {type: string}
                 description: 옛 잡 복사본이 있을 수 있는 워커 (입장 + 지명). 종료 확인은 여기 전부를 본다
+              pinnedNodes:
+                type: array
+                items: {type: string}
+                description: restartInPlace 재제출본을 고정한 노드 (spec.nodes). 비어 있으면 고정 안 함 (GPU-280)
