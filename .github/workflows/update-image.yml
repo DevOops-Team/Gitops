@@ -65,10 +65,7 @@ on:
     secrets:
       DEPLOY_APP_PRIVATE_KEY:
         description: 배포 봇 비밀키. 호출 쪽은 이름으로 넘기고, 실제 값은 Environment gitops-deploy의 같은 이름 Secret
-        required: false   # 전환 중 옛 호출(app-private-key)을 위해 false. 전환이 끝나면 true
-      app-private-key:
-        description: 옛 이름 (조직 Secret). 호출 레포 전환 · 조직 Secret 삭제가 끝나면 이 입력과 아래 fallback을 지운다
-        required: false
+        required: true    # 옛 이름 app-private-key는 모든 호출 레포 전환 뒤 제거 (GPU-294)
 
 permissions:
   contents: read
@@ -77,6 +74,7 @@ jobs:
   update:
     name: update image digest
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment: gitops-deploy
     env:
       IMAGE: ${{ inputs.image }}
@@ -102,7 +100,7 @@ jobs:
 
       - name: Check bot key
         env:
-          HAS_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY != '' || secrets.app-private-key != '' }}
+          HAS_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY != '' }}
         run: |
           [ "$HAS_KEY" = true ] || { echo "::error::배포 봇 키가 비어 있음 — 호출 쪽 secrets: DEPLOY_APP_PRIVATE_KEY 전달 · Environment gitops-deploy Secret 확인"; exit 1; }
 
@@ -111,7 +109,7 @@ jobs:
         uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf   # v2.2.1
         with:
           app-id: ${{ inputs.app-id }}
-          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY || secrets.app-private-key }}   # Environment gitops-deploy Secret (전환 중 옛 이름 fallback)
+          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}   # Environment gitops-deploy Secret
           owner: ${{ env.owner }}
           repositories: ${{ env.name }}
           permission-contents: write                           # 토큰도 contents만
@@ -144,7 +142,8 @@ jobs:
           git config user.name "$BOT_NAME"
           git config user.email "${BOT_NAME}@users.noreply.github.com"
           base_pat="github.com/${GITHUB_REPOSITORY}//"   # 호출 레포 자신의 원격 base만 바꾼다
-          for attempt in 1 2 3; do
+          attempts=5
+          for attempt in $(seq 1 "$attempts"); do
             if [ -n "$BASE_REF" ]; then
               grep -q "${base_pat}.*?ref=" "$OVERLAY/kustomization.yaml" \
                 || { echo "::error::base-ref를 받았지만 $OVERLAY/kustomization.yaml에 ${base_pat}…?ref= 원격 base가 없음"; exit 1; }
@@ -159,7 +158,10 @@ jobs:
             git commit -am "deploy(${IMAGE##*/}): ${label}" \
               -m "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" -m "image: ${ref}${BASE_REF:+, base ref: ${BASE_REF}}"
             git push origin "HEAD:${BRANCH}" && { echo "### ${IMAGE##*/} ${VERSION} → \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
-            echo "push 실패 — ${BRANCH} 다시 받아 재시도 (${attempt}/3)"
+            [ "$attempt" -lt "$attempts" ] || break
+            wait_s=$((attempt * 5 + RANDOM % 10))   # 여러 레포가 동시에 push할 때 겹치지 않게 backoff + jitter (GPU-294)
+            echo "push 실패 — ${wait_s}s 뒤 ${BRANCH} 다시 받아 재시도 (${attempt}/${attempts})"
+            sleep "$wait_s"
             git fetch origin "$BRANCH" && git reset --hard "origin/${BRANCH}"
           done
           echo "::error::Gitops ${BRANCH} push 실패"; exit 1

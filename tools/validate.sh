@@ -4,7 +4,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-CRD_SCHEMAS='https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+# CRD 스키마는 datreeio/CRDs-catalog 커밋 SHA로 고정한다 — main이 바뀌어도 검사 결과가 흔들리지 않게 (GPU-294, 2026-11-22 커밋)
+CRDS_CATALOG_REF='04af58d740718c4dc719441bf39fb284c784f4a8'
+CRD_SCHEMAS="https://raw.githubusercontent.com/datreeio/CRDs-catalog/${CRDS_CATALOG_REF}/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
 status=0
 
 while IFS= read -r dir; do

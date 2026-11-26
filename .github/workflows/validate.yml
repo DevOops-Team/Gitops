@@ -11,25 +11,31 @@ permissions:
 jobs:
   manifests:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       KUSTOMIZE_VERSION: v5.4.3
+      KUSTOMIZE_SHA256: 3669470b454d865c8184d6bce78df05e977c9aea31c30df3c669317d43bcc7a7     # linux_amd64, 릴리스 checksums.txt
       KUBECONFORM_VERSION: v0.6.7
+      KUBECONFORM_SHA256: 95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73   # linux-amd64, 릴리스 CHECKSUMS
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
 
       - name: Install kustomize · kubeconform
         run: |
           mkdir -p "$RUNNER_TEMP/bin"
-          curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" \
-            | tar xz -C "$RUNNER_TEMP/bin" kustomize
-          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
-            | tar xz -C "$RUNNER_TEMP/bin" kubeconform
+          # 받은 파일을 sha256으로 확인한 뒤 푼다 (update-image.yml과 같은 방식, GPU-294)
+          curl -fsSL -o "$RUNNER_TEMP/kustomize.tar.gz" "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          echo "${KUSTOMIZE_SHA256}  $RUNNER_TEMP/kustomize.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/kustomize.tar.gz" -C "$RUNNER_TEMP/bin" kustomize
+          curl -fsSL -o "$RUNNER_TEMP/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  $RUNNER_TEMP/kubeconform.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/kubeconform.tar.gz" -C "$RUNNER_TEMP/bin" kubeconform
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
 
       - name: Build and validate manifests
         run: tools/validate.sh
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065   # v5.6.0
         with:
           python-version: '3.12'
       - name: Vault official CRD schema and handoff contract (no cluster access)
@@ -40,6 +46,7 @@ jobs:
   release-tools:
     name: release tools · test
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262   # v4.4.0
       - name: unittest

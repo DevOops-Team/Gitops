@@ -107,7 +107,7 @@ spec:
         # 값은 overlay images 항목(봇, ADR-23)이 @sha256 digest로 바꾼다 — image-paths.yaml 참고
         - name: CHECKPOINT_IMAGE
           value: ghcr.io/devoops-team/checkpoint
-        # 학습 JobSet의 trainer 이미지 (Backend 레포 trainer/, train.py 포함). Backend CI 봇이 digest를 넣는다
+        # 학습 JobSet의 trainer 이미지 (Data 레포 trainer/, 학습 환경만 — train.py는 사용자 것, ADR-35). Data CI 배포 봇이 overlay images에 digest를 넣는다 (GPU-154)
         - name: TRAINER_IMAGE
           value: ghcr.io/devoops-team/trainer
         envFrom:
