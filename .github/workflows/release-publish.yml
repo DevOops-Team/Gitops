@@ -48,6 +48,7 @@ jobs:
   publish:
     name: tag · release
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment: release
     env:
       TAG: ${{ inputs.tag }}
