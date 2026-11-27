@@ -1,5 +1,5 @@
 # 분류기: 원인 알람(Alertmanager 웹훅)을 판정해 Kafka gpu.fault로 낸다. 모니터링 클러스터에 1개(복제본을 늘리면 중복 제거가 깨진다)
-# overlay는 이 레포 monitoring/onprem/classifier, base는 Monitoring 레포 deploy/classifier/base를 릴리스 태그로 참조한다. 담당: 이태림 (GPU-201)
+# overlay는 이 레포 monitoring/onprem/classifier, base는 Monitoring 레포 deploy/monitoring-cluster/classifier를 릴리스 태그로 참조한다. 담당: 이태림 (GPU-201)
 # 자동 sync: overlay의 태그가 바뀌면 반영한다. prune · selfHeal은 저장 층 Application과 같게 끈다
 apiVersion: argoproj.io/v1alpha1
 kind: Application

@@ -7,7 +7,7 @@ spec:
   description: On-prem manager platform (namespaces · ingress · cert-manager · frontend · backend · data · Kueue · JobSet · scheduling controllers · Vault Secrets Operator)
   sourceRepos:
   - https://github.com/DevOops-Team/Gitops.git
-  - https://github.com/DevOops-Team/Monitoring.git   # 모니터링 수집 층 매니페스트 (Monitoring deploy/agents, 이태림)
+  - https://github.com/DevOops-Team/Monitoring.git   # 모니터링 수집 층 매니페스트 (Monitoring deploy/manager-cluster, 이태림)
   - https://traefik.github.io/charts
   - https://charts.jetstack.io
   - https://helm.releases.hashicorp.com  # 외부 Vault VM 연결용 VSO (GPU-241)

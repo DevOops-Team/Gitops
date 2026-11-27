@@ -1,5 +1,5 @@
 # 모니터링 클러스터 저장 층: Tempo 분산형(트레이스, 블록 S3 · 쓰기는 Kafka tempo.ingest 경유, 이중화 6단계 GPU-227)
-# 차트 grafana-community/tempo-distributed + Monitoring deploy/values/tempo-distributed.yaml. Secret tempo-s3-cert 필요(Monitoring scripts/create-secrets.sh s3-certs). 담당: 이태림 (ADR-18 · ADR-21)
+# 차트 grafana-community/tempo-distributed + Monitoring deploy/monitoring-cluster/values/tempo-distributed.yaml. Secret tempo-s3-cert 필요(Monitoring scripts/create-secrets.sh s3-certs). 담당: 이태림 (ADR-18 · ADR-21)
 # 옛 단일 바이너리(차트 tempo, StatefulSet tempo)에서 바꿨다. 이름이 tempo-*라 겹치지 않고 prune이 꺼져 있어 옛 것은 손으로 정리한다(Monitoring docs/monitoring-ha.md 3.6)
 # 자동 sync: Monitoring main이나 이 파일이 바뀌면 반영한다. prune · selfHeal은 끈다(저장소 리소스를 자동으로 지우지 않고, 비상 때 deploy-k8s.sh로 넣은 변경을 되돌리지 않게) (GPU-184)
 # 비상 경로: 관리 클러스터가 죽어 Argo CD를 못 쓰면 Monitoring 레포 scripts/deploy-k8s.sh. 차트 버전은 그쪽 deploy/versions.env와 같게 유지한다
@@ -35,7 +35,7 @@ spec:
     helm:
       releaseName: tempo     # 옛 릴리스 이름 그대로: 리소스 이름이 tempo-* 가 된다(ServiceAccount tempo만 넘겨받음)
       valueFiles:
-      - $values/deploy/values/tempo-distributed.yaml
+      - $values/deploy/monitoring-cluster/values/tempo-distributed.yaml
   - repoURL: https://github.com/DevOops-Team/Monitoring.git
-    targetRevision: v1.51.0   # GPU-203: Monitoring 폴더 이동 동안 잠깐 고정. 이동이 끝나면 main으로 되돌린다
+    targetRevision: main
     ref: values
