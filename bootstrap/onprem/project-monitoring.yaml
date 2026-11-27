@@ -9,7 +9,7 @@ metadata:
 spec:
   description: Monitoring cluster storage layer (Mimir · Loki · Tempo · Alertmanager · Grafana · exporters), deployed from the on-prem hub
   sourceRepos:
-  - https://github.com/DevOops-Team/Monitoring.git          # 자체 매니페스트 deploy/base + 차트 values deploy/values
+  - https://github.com/DevOops-Team/Monitoring.git          # 자체 매니페스트 deploy/monitoring-cluster/storage + 차트 values deploy/monitoring-cluster/values
   - https://github.com/DevOops-Team/Gitops.git              # 분류기 overlay monitoring/onprem/classifier (GPU-201)
   - https://prometheus-community.github.io/helm-charts      # node-exporter · kube-state-metrics · blackbox · alertmanager
   - https://grafana-community.github.io/helm-charts         # loki · tempo · grafana

@@ -4,7 +4,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: monitoring
 resources:
-- https://github.com/DevOops-Team/Monitoring//deploy/classifier/base?ref=v1.50.0
+- https://github.com/DevOops-Team/Monitoring//deploy/monitoring-cluster/classifier?ref=v1.51.1
 images:
 - digest: sha256:867952d9a6e428418ccbc1c4c66541b4eeae6eb3405d9bb6192cc616e86c2f57
   name: ghcr.io/devoops-team/classifier

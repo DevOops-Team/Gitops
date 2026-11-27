@@ -1,5 +1,5 @@
 # 모니터링 클러스터: kafka_exporter(컨슈머 그룹 lag, 주로 data-collector). 브로커 3대(.40~.42:9092)에 원격으로 붙는다
-# 차트 prometheus-community/prometheus-kafka-exporter + Monitoring deploy/values/kafka-exporter.yaml. 담당: 이태림 (ADR-18 · ADR-21)
+# 차트 prometheus-community/prometheus-kafka-exporter + Monitoring deploy/monitoring-cluster/values/kafka-exporter.yaml. 담당: 이태림 (ADR-18 · ADR-21)
 # 자동 sync: Monitoring main이나 이 파일이 바뀌면 반영한다. prune · selfHeal은 끈다(다른 모니터링 Application과 같은 정책) (GPU-139)
 # 비상 경로: 관리 클러스터가 죽어 Argo CD를 못 쓰면 Monitoring 레포 scripts/deploy-k8s.sh. 차트 버전은 그쪽 deploy/versions.env와 같게 유지한다
 apiVersion: argoproj.io/v1alpha1
@@ -34,7 +34,7 @@ spec:
     helm:
       releaseName: kafka-exporter     # deploy-k8s.sh가 쓰는 helm 릴리스 이름과 같게
       valueFiles:
-      - $values/deploy/values/kafka-exporter.yaml
+      - $values/deploy/monitoring-cluster/values/kafka-exporter.yaml
   - repoURL: https://github.com/DevOops-Team/Monitoring.git
-    targetRevision: v1.51.0   # GPU-203: Monitoring 폴더 이동 동안 잠깐 고정. 이동이 끝나면 main으로 되돌린다
+    targetRevision: main
     ref: values
