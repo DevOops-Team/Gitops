@@ -1,6 +1,6 @@
 # EKS 워커마다 모니터링 수집 층 Application 하나 (gpu-eks-monitoring-<클러스터>): Prometheus Agent · kube-state-metrics ·
 # OTel 게이트웨이(CPU 노드) + Fluent Bit · node-exporter(전 노드) + dcgm-exporter(GPU 노드). 담당: 이태림 (ADR-18 · ADR-21)
-# 매니페스트는 Monitoring 레포 deploy/agents/overlays/eks. 클러스터 이름을 넣지 않은 공용 overlay다.
+# 매니페스트는 Monitoring 레포 deploy/eks. 클러스터 이름을 넣지 않은 공용 overlay다.
 # 대상은 gpu-eks-scheduling과 같다: Argo CD 클러스터 Secret에 라벨 devoops.site/gpu-worker: "true"가 있는 클러스터.
 # IaC가 EKS를 만들 때 Secret을 등록하면 생기고, 지우면 없어진다(GPU-126). EKS가 내려가 있는 동안은 Application이 하나도 없다.
 # 클러스터 이름은 Secret 이름에서 받아 ConfigMap monitoring/monitoring-cluster-info의 CLUSTER_NAME에 넣는다
@@ -45,8 +45,8 @@ spec:
             maxDuration: 5m
       source:
         repoURL: https://github.com/DevOops-Team/Monitoring.git
-        targetRevision: v1.51.0   # GPU-203: Monitoring 폴더 이동 동안 잠깐 고정. 이동이 끝나면 main으로 되돌린다
-        path: deploy/agents/overlays/eks
+        targetRevision: main
+        path: deploy/eks
         kustomize:
           patches:
           - target: {kind: ConfigMap, name: monitoring-cluster-info}
