@@ -8,7 +8,7 @@ images:
   name: ghcr.io/devoops-team/aws-signing-helper
   newName: ghcr.io/devoops-team/aws-signing-helper
   newTag: 1.1.0
-- digest: sha256:2ef0b7f6d3997005e1196ccc45c5b1a2d6809c9e682e0cfc769fdff7292338e1
+- digest: sha256:c12a178a7d2890ce913f33add6eb8398251f3629d7b73676981f2fc86cad9e09
   name: ghcr.io/devoops-team/relocator
   newName: ghcr.io/devoops-team/relocator
-  newTag: 2.7.1
+  newTag: 2.9.0
