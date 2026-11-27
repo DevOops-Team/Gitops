@@ -36,5 +36,5 @@ spec:
       valueFiles:
       - $values/deploy/values/loki.yaml
   - repoURL: https://github.com/DevOops-Team/Monitoring.git
-    targetRevision: main
+    targetRevision: v1.51.0   # GPU-203: Monitoring 폴더 이동 동안 잠깐 고정. 이동이 끝나면 main으로 되돌린다
     ref: values
